@@ -16,7 +16,7 @@ The next program uses the formula ◦C = (5/9)(◦F-32) to print the follow-ing 
 280    137 
 300    148
 
-The program itself still consists of the deﬁnition of a single function named main. It is longer than the one that printed “hello, world”, but not compli-cated. It introduces several new ideas, including comments, declarations, vari-ables, arithmetic expressions, loops, and formatted output.
+The program itself still consists of the deﬁnition of a single function named <main>. It is longer than the one that printed “hello, world”, but not compli-cated. It introduces several new ideas, including comments, declarations, vari-ables, arithmetic expressions, loops, and formatted output.
 
 #include <stdio.h>
 
@@ -41,15 +41,19 @@ fahr = fahr + step;
 }
 
 The two lines
+
 /* print Fahrenheit-Celsius table
 for fahr = 0, 20, ..., 300 */
+
 are a comment, which in this case explains brieﬂy what the program does. Any characters between /* and */ are ignored by the compiler; they may be used freely to make a program easier to understand. Comments may appear any-where a blank or tab or newline can.
 In C, all variables must be declared before they are used, usually at the beginning of the function before any executable statements. A declaration announces the properties of variables; it consists of a type name and a list of variables, such as
+
 int fahr, celsius;
 int lower, upper, step;
 
 The type int means that the variables listed are integers, by contrast with float, which means ﬂoating point, i.e., numbers that may have a fractional part. The range of both int and float depends on the machine you are using; 16-bit ints, which lie between -32768 and +32767, are common, as are 32-bit ints. A float number is typically a 32-bit quantity, with at least six signiﬁcant digits and magnitude generally between about 10-38 and 10+38.
 C provides several other basic data types besides int and float, including:
+
 char	character — a single byte short	short integer
 long	long integer
 double	double-precision ﬂoating point
@@ -78,6 +82,7 @@ while (i < j) i = 2 * i;
 In either case, we will always indent the statements controlled by the while by one tab stop (which we have shown as four spaces) so you can see at a glance which statements are inside the loop. The indentation emphasizes the logical structure of the program. Although C compilers do not care about how a pro-gramlooks, properindentationandspacingarecriticalinmakingprogramseasy for people to read. We recommend writing only one statement per line, and using blanks around operators to clarify grouping. The position of braces is less important, although people hold passionate beliefs. We have chosen one of several popular styles. Pick a style that suits you, then use it consistently.
 
 Most of the work gets done in the body of the loop. The Celsius temperature is computed and assigned to the variable celsius by the statement
+
 celsius = 5 * (fahr-32) / 9;
 
 The reason for multiplying by 5 and then dividing by 9 instead of just multiply-ing by 5/9 is that in C, as in many other languages, integer division truncates: any fractional part is discarded. Since 5 and 9 are integers, 5/9 would be truncated to zero and so all the Celsius temperatures would be reported as zero.
