@@ -32,8 +32,8 @@ Topic chapter2[] = {
     {"2.8 INCREMENT AND DECREMENT OPERATORS 47", NULL, APP_ASSETS_PATH("chapter2/8-chapter2.8.txt")},
     {"2.9 Bitwise Operators", NULL, APP_ASSETS_PATH("chapter2/9-chapter2.9.txt")},
     {"2.10 Assignment Operators and Expressions", NULL, APP_ASSETS_PATH("chapter2/10-chapter2.10.txt")},
-    {"2.11 Conditional Expressions", NULL, APP_ASSETS_PATH("chapter2/10-chapter2.11.txt")},
-    {"2.12 Precedence and Order of Evaluation", NULL, APP_ASSETS_PATH("chapter2/10-chapter2.12.txt")},
+    {"2.11 Conditional Expressions", NULL, APP_ASSETS_PATH("chapter2/11-chapter2.11.txt")},
+    {"2.12 Precedence and Order of Evaluation", NULL, APP_ASSETS_PATH("chapter2/12-chapter2.12.txt")},
     {"Exercises", NULL, APP_ASSETS_PATH("chapter2/exercises.txt")},
 };
 
