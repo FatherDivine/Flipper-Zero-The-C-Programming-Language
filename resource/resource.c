@@ -13,7 +13,8 @@ Topic appendixa[] = {
     {"A10. External Declarations", NULL, APP_ASSETS_PATH("appendixa/9-a10.txt")}, 
     {"A11. Scope and Linkage", NULL, APP_ASSETS_PATH("appendixa/10-a11.txt")}, 
     {"A12. Preprocessing", NULL, APP_ASSETS_PATH("appendixa/11-a12.txt")}, 
-}
+};
+
 Topic preface[] = {
     {"Preface", NULL, APP_ASSETS_PATH("preface/preface.txt")},
     {"Preface to the first edition", NULL, APP_ASSETS_PATH("preface/preface_to_the_first_edition.txt")}
