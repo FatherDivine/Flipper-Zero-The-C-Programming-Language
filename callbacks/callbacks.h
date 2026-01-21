@@ -7,4 +7,7 @@ void menu_callback(void* context, uint32_t index);
 void chapter_callback(void* context, uint32_t index);
 bool back_event_callback(void* context);
 
+// NEW: widget input callback
+bool widget_input_callback(InputEvent* event, void* context);
+
 #endif // CALLBACKS_H

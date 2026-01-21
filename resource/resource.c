@@ -84,8 +84,8 @@ Chapter chapters[] = {
     // {"Ch6-Structures", chapter6, sizeof(chapter6) / sizeof(Topic)},
     // {"Ch7-Input, Output", chapter7, sizeof(chapter7) / sizeof(Topic)},
     // {"Ch8-UNIX Sys Interface", chapter8, sizeof(chapter8) / sizeof(Topic)},
-    {"LICENSE", license, sizeof(license) / sizeof(Topic)},
     {"Appendix A", appendixa, sizeof(appendixa) / sizeof(Topic)},
+    {"LICENSE", license, sizeof(license) / sizeof(Topic)},
 };
 
 const size_t number_of_chapters = sizeof(chapters) / sizeof(Chapter);

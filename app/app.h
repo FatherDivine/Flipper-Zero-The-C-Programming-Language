@@ -14,6 +14,8 @@
 #include <toolbox/stream/file_stream.h>
 #include "../resource/resource.h"
 
+#define PAGE_BUFFER_SIZE 1024
+
 typedef struct App {
     SceneManager* scene_manager;
     ViewDispatcher* view_dispatcher;
@@ -22,8 +24,16 @@ typedef struct App {
     const char* current_topic;
     size_t current_chapter_index;
     Stream* file_stream;
-} App;
 
+    // Menu selection memory
+    uint32_t main_menu_selected_index;
+    uint32_t chapter_selected_index;
+
+    // Paging state
+    size_t file_offset;
+    char page_buffer[PAGE_BUFFER_SIZE];
+
+} App;
 
 App* app_alloc();
 void app_free(App* app);

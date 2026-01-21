@@ -17,6 +17,8 @@ typedef enum {
 
 typedef enum {
     MainMenuEvent,
+    NextPageEvent,
+    PrevPageEvent,
 } MainEvent;
 
 void main_menu_scene_on_enter(void* context);

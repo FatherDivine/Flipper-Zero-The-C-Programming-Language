@@ -13,6 +13,9 @@ void main_menu_scene_on_enter(void* context) {
         submenu_add_item(app->submenu, chapters[i].name, i, menu_callback, app);
     }
 
+    // Restore last selected chapter
+    submenu_set_selected_item(app->submenu, app->main_menu_selected_index);
+
     view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
 }
 
@@ -51,6 +54,9 @@ void chapter_scene_on_enter(void* context) {
         const char* label = currentChapter.content[i].name;
         submenu_add_item(app->submenu, label, i, chapter_callback, app);
     }
+
+    // Restore last selected topic within this chapter
+    submenu_set_selected_item(app->submenu, app->chapter_selected_index);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
 }
@@ -144,6 +150,7 @@ char* wrap_text(const char* text, size_t max_line_width) {
     return wrapped;
 }
 
+// Paged topic viewer: reads one page from file_offset into page_buffer
 void topic_scene_on_enter(void* context) {
     furi_assert(context);
     App* app = (App*)context;
@@ -151,42 +158,52 @@ void topic_scene_on_enter(void* context) {
 
     const char* file_path = app->current_topic;
 
-    DynamicBuffer dynamic_content;
-    dynamic_buffer_init(&dynamic_content, 256);
-
-    if(file_stream_open(app->file_stream, file_path, FSAM_READ, FSOM_OPEN_EXISTING)) {
-        FuriString* line = furi_string_alloc();
-        while(stream_read_line(app->file_stream, line)) {
-            dynamic_buffer_append(&dynamic_content, furi_string_get_cstr(line), furi_string_size(line));
-            dynamic_buffer_append(&dynamic_content, "\r\n", 1);
-        }
-        dynamic_buffer_append(&dynamic_content, "\0", 1);
-        furi_string_free(line);
-        file_stream_close(app->file_stream);
-        size_t max_line_width = WIDGET_WIDTH / CHAR_WIDTH;
-        char* wrapped_text = wrap_text(dynamic_content.data, max_line_width);
-        dynamic_buffer_free(&dynamic_content);
-
-        if(wrapped_text) {
-            widget_add_text_scroll_element(
-                app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, wrapped_text);
-            free(wrapped_text);
-        }
-    } else {
-        dynamic_buffer_free(&dynamic_content);
-        dynamic_buffer_init(&dynamic_content, 30);
-        strcpy(dynamic_content.data, "Failed to open asset file.");
+    if(!file_stream_open(app->file_stream, file_path, FSAM_READ, FSOM_OPEN_EXISTING)) {
         widget_add_text_scroll_element(
-            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, dynamic_content.data);
+            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, "Failed to open asset file.");
+        view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
+        return;
     }
 
+    // Seek to current page offset
+    stream_seek(app->file_stream, app->file_offset, StreamSeekOriginBegin);
+
+    // Read one page into fixed buffer
+    size_t bytes_read =
+        stream_read(app->file_stream, (uint8_t*)app->page_buffer, PAGE_BUFFER_SIZE - 1);
+    app->page_buffer[bytes_read] = '\0';
+
+    file_stream_close(app->file_stream);
+
+    widget_add_text_scroll_element(
+        app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, app->page_buffer);
+
     view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
-    dynamic_buffer_free(&dynamic_content);
 }
 
 bool topic_scene_on_event(void* context, SceneManagerEvent event) {
-    UNUSED(context);
-    UNUSED(event);
+    App* app = context;
+
+    if(event.type == SceneManagerEventTypeCustom) {
+        if(event.event == NextPageEvent) {
+            // Advance with some overlap for readability
+            if(app->file_offset + (PAGE_BUFFER_SIZE - 200) > app->file_offset) {
+                app->file_offset += PAGE_BUFFER_SIZE - 200;
+            }
+            scene_manager_next_scene(app->scene_manager, TopicScene);
+            return true;
+        }
+        if(event.event == PrevPageEvent) {
+            if(app->file_offset >= PAGE_BUFFER_SIZE) {
+                app->file_offset -= PAGE_BUFFER_SIZE - 200;
+            } else {
+                app->file_offset = 0;
+            }
+            scene_manager_next_scene(app->scene_manager, TopicScene);
+            return true;
+        }
+    }
+
     return false;
 }
 
