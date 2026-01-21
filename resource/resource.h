@@ -2,8 +2,8 @@
 #define RESOURCE_H
 
 #include <stdlib.h>
+#include <storage/storage.h>
 #include "../constants/constants.h"
-#include "../app/app.h"
 
 typedef struct {
     const char* name;

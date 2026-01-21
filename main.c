@@ -13,10 +13,14 @@ int main() {
 int32_t c_book_app(void* p) {
     UNUSED(p);
     App* app = app_alloc();
+    if(!app) {
+        return -1;
+    }
     Gui* gui = furi_record_open(RECORD_GUI);
     view_dispatcher_attach_to_gui(app->view_dispatcher, gui, ViewDispatcherTypeFullscreen);
-    scene_manager_next_scene(app->scene_manager, MainMenuScene);
+    scene_manager_next_scene(app->scene_manager, StartMenuScene);
     view_dispatcher_run(app->view_dispatcher);
+    furi_record_close(RECORD_GUI);
     app_free(app);
     return 0;
 }
