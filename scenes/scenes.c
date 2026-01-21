@@ -3,11 +3,65 @@
 #include "../resource/resource.h"
 #include "../constants/constants.h"
 #include "../buffer/dynamic_buffer.h"
+#include <string.h>
 
 // Display parameters for Flipper Zero screen
+// Using 4 lines for content + 1 line for footer (page numbers, navigation)
 #define CHARS_PER_LINE 25   // ~128px / 5px per char
-#define LINES_PER_PAGE 7    // ~64px / 9px per line (with some margin for scroll bar)
+#define LINES_PER_PAGE 4    // 4 lines for content, leaving room for footer
 
+// Forward declarations for new scenes
+void start_menu_scene_on_enter(void* context);
+bool start_menu_scene_on_event(void* context, SceneManagerEvent event);
+void start_menu_scene_on_exit(void* context);
+
+void options_scene_on_enter(void* context);
+bool options_scene_on_event(void* context, SceneManagerEvent event);
+void options_scene_on_exit(void* context);
+
+void credits_scene_on_enter(void* context);
+bool credits_scene_on_event(void* context, SceneManagerEvent event);
+void credits_scene_on_exit(void* context);
+
+void bookmarks_scene_on_enter(void* context);
+bool bookmarks_scene_on_event(void* context, SceneManagerEvent event);
+void bookmarks_scene_on_exit(void* context);
+
+// Start Menu Scene - new main entry point
+void start_menu_scene_on_enter(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, "C Programming Book");
+
+    uint32_t idx = 0;
+    
+    // Show "Continue Reading" only if there's a saved position
+    if(app->has_reading_position && strlen(app->last_topic_path) > 0) {
+        submenu_add_item(app->submenu, "Continue Reading", StartMenuContinue, start_menu_callback, app);
+        idx++;
+    }
+    
+    submenu_add_item(app->submenu, "Read from Beginning", StartMenuRead, start_menu_callback, app);
+    submenu_add_item(app->submenu, "Table of Contents", StartMenuTOC, start_menu_callback, app);
+    submenu_add_item(app->submenu, "Bookmarks", StartMenuBookmarks, start_menu_callback, app);
+    submenu_add_item(app->submenu, "Options", StartMenuOptions, start_menu_callback, app);
+    submenu_add_item(app->submenu, "About / Credits", StartMenuCredits, start_menu_callback, app);
+
+    view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
+}
+
+bool start_menu_scene_on_event(void* context, SceneManagerEvent event) {
+    UNUSED(context);
+    UNUSED(event);
+    return false;
+}
+
+void start_menu_scene_on_exit(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+}
+
+// Table of Contents (formerly main menu)
 void main_menu_scene_on_enter(void* context) {
     App* app = context;
     submenu_reset(app->submenu);
@@ -75,67 +129,204 @@ void chapter_scene_on_exit(void* context) {
     UNUSED(context);
 }
 
-// Find the byte offset where we should end this page (end at word boundary)
-// Returns number of bytes that fit in the page
-static size_t find_page_end(const char* buffer, size_t buffer_len, size_t chars_per_line, size_t max_lines) {
-    if(buffer_len == 0) return 0;
+// Options Scene
+void options_scene_on_enter(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, "Options");
+
+    // Backlight option
+    if(app->backlight_on) {
+        submenu_add_item(app->submenu, "Backlight: ON", OptionsBacklight, options_callback, app);
+    } else {
+        submenu_add_item(app->submenu, "Backlight: Auto", OptionsBacklight, options_callback, app);
+    }
+
+    view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
+}
+
+bool options_scene_on_event(void* context, SceneManagerEvent event) {
+    App* app = context;
+    bool consumed = false;
     
-    size_t lines = 1;
-    size_t col = 0;
-    size_t last_space = 0;
-    size_t last_line_start = 0;
-    
-    for(size_t i = 0; i < buffer_len; i++) {
-        char c = buffer[i];
-        
-        if(c == '\n') {
-            lines++;
-            col = 0;
-            last_line_start = i + 1;
-            if(lines > max_lines) {
-                // Return up to this newline
-                return i;
-            }
-        } else if(c == ' ') {
-            last_space = i;
-            col++;
-            if(col >= chars_per_line) {
-                lines++;
-                col = 0;
-                last_line_start = i + 1;
-                if(lines > max_lines) {
-                    return i;
-                }
-            }
-        } else {
-            col++;
-            if(col >= chars_per_line) {
-                lines++;
-                col = 0;
-                last_line_start = i + 1;
-                if(lines > max_lines) {
-                    // Try to break at last space if available and on same wrapped block
-                    if(last_space > 0 && last_space > last_line_start - chars_per_line) {
-                        return last_space;
-                    }
-                    return i;
-                }
-            }
+    if(event.type == SceneManagerEventTypeCustom) {
+        if(event.event == OptionsBacklight) {
+            // Toggle backlight
+            app->backlight_on = !app->backlight_on;
+            app_set_backlight(app, app->backlight_on);
+            app_save_settings(app);
+            // Refresh the scene to show updated state
+            options_scene_on_exit(app);
+            options_scene_on_enter(app);
+            consumed = true;
         }
     }
     
-    // All text fits
-    return buffer_len;
+    return consumed;
+}
+
+void options_scene_on_exit(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+}
+
+// Credits Scene
+void credits_scene_on_enter(void* context) {
+    App* app = context;
+    widget_reset(app->widget);
+
+    const char* credits_text = 
+        "The C Programming Language\n"
+        "Flipper Zero Edition\n"
+        "\n"
+        "Original Book by:\n"
+        "Brian W. Kernighan\n"
+        "Dennis M. Ritchie\n"
+        "\n"
+        "App Development:\n"
+        "@armixz - Original idea,\n"
+        "preface & Ch1 content\n"
+        "\n"
+        "@FatherDivine -\n"
+        "Completion, polish,\n"
+        "features & chapters\n"
+        "\n"
+        "Version 0.3";
+
+    widget_add_text_scroll_element(
+        app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, credits_text);
+
+    view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
+}
+
+bool credits_scene_on_event(void* context, SceneManagerEvent event) {
+    UNUSED(context);
+    UNUSED(event);
+    return false;
+}
+
+void credits_scene_on_exit(void* context) {
+    App* app = context;
+    widget_reset(app->widget);
+}
+
+// Bookmarks Scene
+void bookmarks_scene_on_enter(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+    submenu_set_header(app->submenu, "Bookmarks");
+
+    if(app->bookmark_count == 0) {
+        submenu_add_item(app->submenu, "(No bookmarks)", 0, NULL, app);
+    } else {
+        for(size_t i = 0; i < app->bookmark_count; i++) {
+            // Extract filename from path for display
+            const char* path = app->bookmark_topics[i];
+            const char* filename = strrchr(path, '/');
+            if(filename) {
+                filename++; // Skip the '/'
+            } else {
+                filename = path;
+            }
+            submenu_add_item(app->submenu, filename, i, bookmarks_callback, app);
+        }
+    }
+
+    view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
+}
+
+bool bookmarks_scene_on_event(void* context, SceneManagerEvent event) {
+    UNUSED(context);
+    UNUSED(event);
+    return false;
+}
+
+void bookmarks_scene_on_exit(void* context) {
+    App* app = context;
+    submenu_reset(app->submenu);
+}
+
+// Calculate page layout with proper line wrapping
+// Returns the number of bytes that fit on this page
+static size_t calculate_page_content(const char* buffer, size_t buffer_len, size_t chars_per_line, size_t max_lines) {
+    if(buffer_len == 0) return 0;
+    
+    size_t lines_used = 0;
+    size_t col = 0;
+    size_t i = 0;
+    size_t last_space_pos = 0;
+    size_t last_line_start = 0;
+    
+    while(i < buffer_len && lines_used < max_lines) {
+        char c = buffer[i];
+        
+        if(c == '\n') {
+            // Newline - move to next line
+            lines_used++;
+            col = 0;
+            last_line_start = i + 1;
+            i++;
+            continue;
+        }
+        
+        if(c == ' ') {
+            last_space_pos = i;
+        }
+        
+        col++;
+        
+        if(col > chars_per_line) {
+            // Line too long, need to wrap
+            lines_used++;
+            
+            if(lines_used >= max_lines) {
+                // We've hit the limit, return up to last good break point
+                if(last_space_pos > last_line_start) {
+                    return last_space_pos + 1; // Include the space
+                }
+                return i;
+            }
+            
+            // Try to wrap at word boundary
+            if(last_space_pos > last_line_start && c != ' ') {
+                // Go back to the space and wrap there
+                i = last_space_pos + 1;
+                col = 0;
+                last_line_start = i;
+                continue;
+            }
+            
+            col = 1;
+            last_line_start = i;
+        }
+        
+        i++;
+    }
+    
+    // Check if we've used all lines
+    if(lines_used >= max_lines) {
+        // Return to last word boundary if possible
+        if(last_space_pos > last_line_start) {
+            return last_space_pos + 1;
+        }
+    }
+    
+    return i;
 }
 
 // Initialize file and calculate total pages
-static void init_file_pages(App* app) {
+static bool init_file_pages(App* app) {
     const char* file_path = app->current_topic;
+    
+    // Check SD card first
+    if(!app_check_sd_card(app)) {
+        return false;
+    }
     
     if(!file_stream_open(app->file_stream, file_path, FSAM_READ, FSOM_OPEN_EXISTING)) {
         app->file_size = 0;
         app->total_pages = 1;
-        return;
+        return false;
     }
     
     // Get file size
@@ -144,7 +335,6 @@ static void init_file_pages(App* app) {
     stream_seek(app->file_stream, 0, StreamOffsetFromStart);
     
     // Calculate pages by scanning through file
-    // Reuse app->page_buffer to avoid large stack allocation
     app->total_pages = 0;
     size_t offset = 0;
     
@@ -160,17 +350,17 @@ static void init_file_pages(App* app) {
         app->page_buffer[bytes_read] = '\0';
         
         // Find where this page ends
-        size_t page_len = find_page_end(app->page_buffer, bytes_read, CHARS_PER_LINE, LINES_PER_PAGE);
+        size_t page_len = calculate_page_content(app->page_buffer, bytes_read, CHARS_PER_LINE, LINES_PER_PAGE);
         if(page_len == 0) page_len = bytes_read; // Safety: advance at least some
         
         offset += page_len;
         
-        // Skip whitespace at page boundary to avoid leading spaces on next page
+        // Skip leading whitespace at page boundary
         while(offset < app->file_size) {
             stream_seek(app->file_stream, offset, StreamOffsetFromStart);
             char c;
             if(stream_read(app->file_stream, (uint8_t*)&c, 1) == 0) break;
-            if(c == ' ' || c == '\n') {
+            if(c == ' ') {
                 offset++;
             } else {
                 break;
@@ -181,56 +371,117 @@ static void init_file_pages(App* app) {
     if(app->total_pages == 0) app->total_pages = 1;
     
     file_stream_close(app->file_stream);
+    return true;
 }
 
-// Find a good break point in the buffer, preferring paragraph/sentence/word boundaries
-// Returns the position where the page should end (relative to buffer start)
-static size_t find_page_break(const char* buffer, size_t bytes_read) {
-    if(bytes_read == 0) return 0;
+// Load current page content into display buffer
+static bool load_current_page(App* app) {
+    const char* file_path = app->current_topic;
     
-    // Target is roughly 80% of buffer to find a good break point
-    size_t target = (bytes_read * 4) / 5;
-    if(target < 100) target = bytes_read; // If small, just use all of it
-    
-    // Search backwards from target for a good break point
-    size_t best_break = target;
-    size_t min_pos = target / 2;
-    
-    // Look for paragraph break (double newline) - highest priority
-    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
-        if(buffer[i] == '\n' && buffer[i + 1] == '\n') {
-            return i + 2; // Include both newlines
-        }
-        if(i == 0) break; // Prevent underflow
+    // Check SD card first
+    if(!app_check_sd_card(app)) {
+        return false;
     }
     
-    // Look for sentence end (period/question/exclamation followed by space/newline)
-    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
-        if((buffer[i] == '.' || buffer[i] == '?' || buffer[i] == '!') &&
-           (buffer[i + 1] == ' ' || buffer[i + 1] == '\n')) {
-            return i + 2; // Include punctuation and space
-        }
-        if(i == 0) break; // Prevent underflow
+    if(!file_stream_open(app->file_stream, file_path, FSAM_READ, FSOM_OPEN_EXISTING)) {
+        return false;
     }
     
-    // Look for newline (end of line)
-    for(size_t i = target; i > min_pos; i--) {
-        if(buffer[i] == '\n') {
-            return i + 1; // Include the newline
-        }
-        if(i == 0) break; // Prevent underflow
+    // Seek to current page offset
+    stream_seek(app->file_stream, app->file_offset, StreamOffsetFromStart);
+    
+    // Read content into buffer
+    size_t bytes_read = stream_read(app->file_stream, (uint8_t*)app->page_buffer, PAGE_BUFFER_SIZE - 1);
+    file_stream_close(app->file_stream);
+    
+    if(bytes_read == 0) {
+        return false;
     }
     
-    // Look for word boundary (space)
-    for(size_t i = target; i > min_pos; i--) {
-        if(buffer[i] == ' ') {
-            return i + 1; // Include the space
-        }
-        if(i == 0) break; // Prevent underflow
+    app->page_buffer[bytes_read] = '\0';
+    
+    // Calculate how much content fits on this page
+    size_t page_content_len = calculate_page_content(app->page_buffer, bytes_read, CHARS_PER_LINE, LINES_PER_PAGE);
+    app->current_page_size = page_content_len;
+    
+    // Build display buffer with content and footer
+    memset(app->display_buffer, 0, DISPLAY_BUFFER_SIZE);
+    
+    // Copy page content
+    size_t display_pos = 0;
+    for(size_t i = 0; i < page_content_len && display_pos < DISPLAY_BUFFER_SIZE - 64; i++) {
+        app->display_buffer[display_pos++] = app->page_buffer[i];
     }
     
-    // Fallback: use target position if no good break found
-    return best_break;
+    // Add newlines to ensure footer is at bottom
+    // Count existing newlines in content
+    size_t content_lines = 1;
+    for(size_t i = 0; i < page_content_len; i++) {
+        if(app->page_buffer[i] == '\n') content_lines++;
+        // Also count wrapped lines
+        size_t line_len = 0;
+        while(i < page_content_len && app->page_buffer[i] != '\n') {
+            line_len++;
+            i++;
+        }
+        if(line_len > CHARS_PER_LINE) {
+            content_lines += line_len / CHARS_PER_LINE;
+        }
+    }
+    
+    // Add padding newlines if needed (we want footer on line 5)
+    while(content_lines < LINES_PER_PAGE && display_pos < DISPLAY_BUFFER_SIZE - 32) {
+        app->display_buffer[display_pos++] = '\n';
+        content_lines++;
+    }
+    
+    // Ensure there's a newline before footer
+    if(display_pos > 0 && app->display_buffer[display_pos - 1] != '\n') {
+        app->display_buffer[display_pos++] = '\n';
+    }
+    
+    // Check if page is bookmarked
+    app->current_page_bookmarked = app_is_page_bookmarked(app);
+    
+    // Add footer: navigation hints and page number
+    // Format: < [page/total] > or *< [page/total] > if bookmarked
+    char footer[64];
+    if(app->current_page_bookmarked) {
+        snprintf(footer, sizeof(footer), "< * [%zu/%zu] >", 
+                app->current_page + 1, app->total_pages);
+    } else {
+        snprintf(footer, sizeof(footer), "<   [%zu/%zu]   >", 
+                app->current_page + 1, app->total_pages);
+    }
+    
+    // Center the footer
+    size_t footer_len = strlen(footer);
+    size_t padding = (CHARS_PER_LINE - footer_len) / 2;
+    for(size_t i = 0; i < padding && display_pos < DISPLAY_BUFFER_SIZE - footer_len - 1; i++) {
+        app->display_buffer[display_pos++] = ' ';
+    }
+    
+    // Append footer
+    for(size_t i = 0; i < footer_len && display_pos < DISPLAY_BUFFER_SIZE - 1; i++) {
+        app->display_buffer[display_pos++] = footer[i];
+    }
+    
+    app->display_buffer[display_pos] = '\0';
+    
+    return true;
+}
+
+// Find page index from offset
+static size_t find_page_from_offset(App* app, size_t offset) {
+    for(size_t i = 0; i < app->total_pages; i++) {
+        if(app->page_offsets[i] == offset) {
+            return i;
+        }
+        if(i + 1 < app->total_pages && app->page_offsets[i + 1] > offset) {
+            return i;
+        }
+    }
+    return app->total_pages > 0 ? app->total_pages - 1 : 0;
 }
 
 // Paged topic viewer: reads one page from file_offset into page_buffer
@@ -239,54 +490,43 @@ void topic_scene_on_enter(void* context) {
     App* app = (App*)context;
     widget_reset(app->widget);
 
-    // If this is first entry (file_offset == 0 and current_page == 0), initialize pages
-    if(app->file_offset == 0 && app->current_page == 0 && app->total_pages == 0) {
-        init_file_pages(app);
+    // Check SD card availability
+    if(!app_check_sd_card(app)) {
+        widget_add_text_scroll_element(
+            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, 
+            "SD Card Error!\n\nSD card not found or\nremoved.\n\nPlease insert SD card\nand try again.");
+        view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
+        return;
+    }
+
+    // If this is first entry, initialize pages
+    if(app->total_pages == 0) {
+        if(!init_file_pages(app)) {
+            widget_add_text_scroll_element(
+                app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, 
+                "Failed to open file.\n\nFile may be missing\nor corrupted.");
+            view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
+            return;
+        }
+        app->current_page = find_page_from_offset(app, app->file_offset);
+    }
+
+    // Enable backlight if setting is on
+    if(app->backlight_on) {
+        app_set_backlight(app, true);
     }
 
     // Load current page
     if(!load_current_page(app)) {
         widget_add_text_scroll_element(
-            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, "Failed to open file.");
+            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, 
+            "Failed to load page.\n\nSD card may have been\nremoved.");
         view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
         return;
     }
 
-    // Get file size to check if we're at the end
-    size_t file_size = stream_size(app->file_stream);
-    
-    // If offset is beyond file size, reset to beginning
-    if(app->file_offset >= file_size) {
-        app->file_offset = 0;
-    }
-
-    // Seek to current page offset
-    stream_seek(app->file_stream, app->file_offset, StreamOffsetFromStart);
-
-    // Read one page into fixed buffer
-    size_t bytes_read =
-        stream_read(app->file_stream, (uint8_t*)app->page_buffer, PAGE_BUFFER_SIZE - 1);
-    
-    file_stream_close(app->file_stream);
-    
-    if(bytes_read == 0) {
-        // No more content, wrap to beginning
-        app->file_offset = 0;
-        app->current_page_size = 0;
-        widget_add_text_scroll_element(
-            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, "End of document.");
-        view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
-        return;
-    }
-    
-    // Find a sensible break point
-    size_t page_end = find_page_break(app->page_buffer, bytes_read);
-    
-    // Store the actual page size for navigation
-    app->current_page_size = page_end;
-    
-    // Null-terminate at the break point
-    app->page_buffer[page_end] = '\0';
+    // Save reading position
+    app_save_reading_position(app);
 
     widget_add_text_scroll_element(
         app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, app->display_buffer);
@@ -299,21 +539,37 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == NextPageEvent) {
-            // Advance by the actual size of the current page
-            app->file_offset += app->current_page_size;
-            // Refresh the current scene instead of pushing a new one
-            topic_scene_on_exit(app);
-            topic_scene_on_enter(app);
+            // Go to next page if not at end
+            if(app->current_page < app->total_pages - 1) {
+                app->current_page++;
+                app->file_offset = app->page_offsets[app->current_page];
+                // Refresh the current scene
+                topic_scene_on_exit(app);
+                topic_scene_on_enter(app);
+            }
             return true;
         }
         if(event.event == PrevPageEvent) {
-            // Go back by the page size (approximate)
-            if(app->file_offset > app->current_page_size) {
-                app->file_offset -= app->current_page_size;
-            } else {
-                // Near the beginning of file, just go to start
-                app->file_offset = 0;
+            // Go to previous page if not at beginning
+            if(app->current_page > 0) {
+                app->current_page--;
+                app->file_offset = app->page_offsets[app->current_page];
+                // Refresh the current scene
+                topic_scene_on_exit(app);
+                topic_scene_on_enter(app);
             }
+            return true;
+        }
+        if(event.event == BookmarkEvent) {
+            // Toggle bookmark
+            if(app->current_page_bookmarked) {
+                app_remove_bookmark(app);
+            } else {
+                app_add_bookmark(app);
+            }
+            // Refresh to show bookmark status
+            topic_scene_on_exit(app);
+            topic_scene_on_enter(app);
             return true;
         }
     }
@@ -325,4 +581,7 @@ void topic_scene_on_exit(void* context) {
     furi_assert(context);
     App* app = (App*)context;
     widget_reset(app->widget);
+    
+    // Save position when leaving
+    app_save_reading_position(app);
 }
