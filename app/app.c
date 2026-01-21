@@ -25,8 +25,9 @@ App* app_alloc() {
     view_dispatcher_add_view(
         app->view_dispatcher, WidgetView, widget_get_view(app->widget));
 
-    // NEW: set dispatcher input callback for paging
-    view_dispatcher_set_input_callback(app->view_dispatcher, widget_input_callback);
+    // NEW: set widget input callback for paging
+    view_set_context(widget_get_view(app->widget), app);
+    view_set_input_callback(widget_get_view(app->widget), widget_input_callback);
 
     return app;
 }
