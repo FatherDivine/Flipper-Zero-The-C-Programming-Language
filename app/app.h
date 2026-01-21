@@ -15,6 +15,8 @@
 #include "../resource/resource.h"
 
 #define PAGE_BUFFER_SIZE 1024
+#define MAX_PAGE_HISTORY 128
+#define DISPLAY_BUFFER_SIZE (PAGE_BUFFER_SIZE + 64)
 
 typedef struct App {
     SceneManager* scene_manager;
