@@ -33,14 +33,9 @@ typedef struct App {
 
     // Paging state
     size_t file_offset;
+    size_t current_page_size; // Number of bytes displayed on current page
     char page_buffer[PAGE_BUFFER_SIZE];
-    char display_buffer[DISPLAY_BUFFER_SIZE]; // Buffer for display with page indicator
-    
-    // Page tracking for proper navigation
-    size_t page_offsets[MAX_PAGE_HISTORY]; // Store start offset of each page
-    size_t current_page;                    // Current page index (0-based)
-    size_t total_pages;                     // Total number of pages (calculated on file open)
-    size_t file_size;                       // Total file size in bytes
+    size_t page_bytes_displayed; // Track actual bytes displayed on current page
 
 } App;
 
