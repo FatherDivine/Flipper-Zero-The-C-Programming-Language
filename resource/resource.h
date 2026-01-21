@@ -2,6 +2,7 @@
 #define RESOURCE_H
 
 #include <stdlib.h>
+#include <storage/storage.h>
 #include "../constants/constants.h"
 
 typedef struct {
