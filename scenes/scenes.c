@@ -538,7 +538,8 @@ static size_t find_page_from_offset(App* app, size_t offset) {
 
 /* Helper function to navigate to a specific topic
  * Resets pagination state
- * Validates indices before accessing arrays. Caller must refresh scene after calling.
+ * Validates indices before accessing arrays
+ * Caller must call refresh_topic_scene(app) after this to update the display
  */
 static void navigate_to_topic(App* app, size_t chapter_index, size_t topic_index) {
     // Validate chapter index
