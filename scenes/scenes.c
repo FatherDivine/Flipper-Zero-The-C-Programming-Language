@@ -10,23 +10,6 @@
 #define CHARS_PER_LINE 25   // ~128px / 5px per char
 #define LINES_PER_PAGE 4    // 4 lines for content, leaving room for footer
 
-// Forward declarations for new scenes
-void start_menu_scene_on_enter(void* context);
-bool start_menu_scene_on_event(void* context, SceneManagerEvent event);
-void start_menu_scene_on_exit(void* context);
-
-void options_scene_on_enter(void* context);
-bool options_scene_on_event(void* context, SceneManagerEvent event);
-void options_scene_on_exit(void* context);
-
-void credits_scene_on_enter(void* context);
-bool credits_scene_on_event(void* context, SceneManagerEvent event);
-void credits_scene_on_exit(void* context);
-
-void bookmarks_scene_on_enter(void* context);
-bool bookmarks_scene_on_event(void* context, SceneManagerEvent event);
-void bookmarks_scene_on_exit(void* context);
-
 // Start Menu Scene - new main entry point
 void start_menu_scene_on_enter(void* context) {
     App* app = context;
