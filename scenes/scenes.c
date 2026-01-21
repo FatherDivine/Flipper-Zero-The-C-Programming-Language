@@ -150,15 +150,16 @@ char* wrap_text(const char* text, size_t max_line_width) {
     return wrapped;
 }
 
-// Find the last word boundary (space or newline) in a buffer
+// Find the last word boundary (space, newline, or tab) in a buffer
 // Returns the index of the character after the boundary
 static size_t find_last_word_boundary(const char* buffer, size_t length) {
     if(length == 0) return 0;
     
-    // Start from the end and look backwards for a space or newline
+    // Start from the end and look backwards for a space, newline, or tab
     for(size_t i = length; i > 0; i--) {
-        if(buffer[i - 1] == ' ' || buffer[i - 1] == '\n') {
-            // Found a boundary, return position after the space/newline
+        char c = buffer[i - 1];
+        if(c == ' ' || c == '\n' || c == '\t') {
+            // Found a boundary, return position after the space/newline/tab
             return i;
         }
     }
@@ -228,11 +229,13 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
         }
         if(event.event == PrevPageEvent) {
             // Go back by approximately one page worth of content
-            // We use page_bytes_displayed as an estimate, or PAGE_BUFFER_SIZE if not available
-            size_t back_amount = app->page_bytes_displayed > 0 ? app->page_bytes_displayed : PAGE_BUFFER_SIZE;
+            // Use the current page size as an estimate, or PAGE_BUFFER_SIZE as a fallback
+            size_t back_amount = (app->page_bytes_displayed > 0) ? app->page_bytes_displayed : PAGE_BUFFER_SIZE;
+            
             if(app->file_offset >= back_amount) {
                 app->file_offset -= back_amount;
             } else {
+                // Near the beginning of file, just go to start
                 app->file_offset = 0;
             }
             // Refresh the current scene instead of pushing a new one
