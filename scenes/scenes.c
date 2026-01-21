@@ -144,23 +144,23 @@ static void init_file_pages(App* app) {
     stream_seek(app->file_stream, 0, StreamOffsetFromStart);
     
     // Calculate pages by scanning through file
+    // Reuse app->page_buffer to avoid large stack allocation
     app->total_pages = 0;
     size_t offset = 0;
-    char temp_buffer[PAGE_BUFFER_SIZE];
     
     while(offset < app->file_size && app->total_pages < MAX_PAGE_HISTORY) {
         // Store this page's start offset
         app->page_offsets[app->total_pages] = offset;
         app->total_pages++;
         
-        // Read a chunk
+        // Read a chunk into app->page_buffer
         stream_seek(app->file_stream, offset, StreamOffsetFromStart);
-        size_t bytes_read = stream_read(app->file_stream, (uint8_t*)temp_buffer, PAGE_BUFFER_SIZE - 1);
+        size_t bytes_read = stream_read(app->file_stream, (uint8_t*)app->page_buffer, PAGE_BUFFER_SIZE - 1);
         if(bytes_read == 0) break;
-        temp_buffer[bytes_read] = '\0';
+        app->page_buffer[bytes_read] = '\0';
         
         // Find where this page ends
-        size_t page_len = find_page_end(temp_buffer, bytes_read, CHARS_PER_LINE, LINES_PER_PAGE);
+        size_t page_len = find_page_end(app->page_buffer, bytes_read, CHARS_PER_LINE, LINES_PER_PAGE);
         if(page_len == 0) page_len = bytes_read; // Safety: advance at least some
         
         offset += page_len;
@@ -242,14 +242,13 @@ void topic_scene_on_enter(void* context) {
     }
 
     // Build display text with page indicator
-    static char display_buffer[PAGE_BUFFER_SIZE + 64];
     char indicator[32];
     build_page_indicator(app, indicator, sizeof(indicator));
     
-    snprintf(display_buffer, sizeof(display_buffer), "%s%s", app->page_buffer, indicator);
+    snprintf(app->display_buffer, DISPLAY_BUFFER_SIZE, "%s%s", app->page_buffer, indicator);
 
     widget_add_text_scroll_element(
-        app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, display_buffer);
+        app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, app->display_buffer);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
 }

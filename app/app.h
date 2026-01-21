@@ -16,6 +16,7 @@
 
 #define PAGE_BUFFER_SIZE 1024
 #define MAX_PAGE_HISTORY 128
+#define DISPLAY_BUFFER_SIZE (PAGE_BUFFER_SIZE + 64)
 
 typedef struct App {
     SceneManager* scene_manager;
@@ -33,6 +34,7 @@ typedef struct App {
     // Paging state
     size_t file_offset;
     char page_buffer[PAGE_BUFFER_SIZE];
+    char display_buffer[DISPLAY_BUFFER_SIZE]; // Buffer for display with page indicator
     
     // Page tracking for proper navigation
     size_t page_offsets[MAX_PAGE_HISTORY]; // Store start offset of each page
