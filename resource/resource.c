@@ -1,5 +1,20 @@
 #include "resource.h"
 
+Topic appendixa[] = {
+    {"A1. Introduction", NULL, APP_ASSETS_PATH("appendixa/0-a1.txt")}, 
+    {"A2. Lexical Conventions", NULL, APP_ASSETS_PATH("appendixa/1-a2.txt")}, 
+    {"A3. Syntax Notation", NULL, APP_ASSETS_PATH("appendixa/2-a3.txt")}, 
+    {"A4. Meaning of Identifiers", NULL, APP_ASSETS_PATH("appendixa/3-a4.txt")}, 
+    {"A5. Objects and L values", NULL, APP_ASSETS_PATH("appendixa/4-a5.txt")}, 
+    {"A6. Conversions", NULL, APP_ASSETS_PATH("appendixa/5-a6.txt")}, 
+    {"A7. Expressions", NULL, APP_ASSETS_PATH("appendixa/6-a7.txt")}, 
+    {"A8. Declarations", NULL, APP_ASSETS_PATH("appendixa/7-a8.txt")}, 
+    {"A9. Statements", NULL, APP_ASSETS_PATH("appendixa/8-a9.txt")}, 
+    {"A10. External Declarations", NULL, APP_ASSETS_PATH("appendixa/9-a10.txt")}, 
+    {"A11. Scope and Linkage", NULL, APP_ASSETS_PATH("appendixa/10-a11.txt")}, 
+    {"A12. Preprocessing", NULL, APP_ASSETS_PATH("appendixa/11-a12.txt")}, 
+};
+
 Topic preface[] = {
     {"Preface", NULL, APP_ASSETS_PATH("preface/preface.txt")},
     {"Preface to the first edition", NULL, APP_ASSETS_PATH("preface/preface_to_the_first_edition.txt")}
@@ -69,6 +84,7 @@ Chapter chapters[] = {
     // {"Ch6-Structures", chapter6, sizeof(chapter6) / sizeof(Topic)},
     // {"Ch7-Input, Output", chapter7, sizeof(chapter7) / sizeof(Topic)},
     // {"Ch8-UNIX Sys Interface", chapter8, sizeof(chapter8) / sizeof(Topic)},
+    {"Appendix A", appendixa, sizeof(appendixa) / sizeof(Topic)},
     {"LICENSE", license, sizeof(license) / sizeof(Topic)},
 };
 
