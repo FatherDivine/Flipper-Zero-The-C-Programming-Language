@@ -29,6 +29,9 @@ void chapter_callback(void* context, uint32_t index) {
 
         // Reset paging when opening a new topic
         app->file_offset = 0;
+        app->current_page = 0;
+        app->total_pages = 0;
+        app->file_size = 0;
 
         scene_manager_next_scene(app->scene_manager, TopicScene);
     }

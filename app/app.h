@@ -15,6 +15,7 @@
 #include "../resource/resource.h"
 
 #define PAGE_BUFFER_SIZE 1024
+#define MAX_PAGE_HISTORY 128
 
 typedef struct App {
     SceneManager* scene_manager;
@@ -32,6 +33,12 @@ typedef struct App {
     // Paging state
     size_t file_offset;
     char page_buffer[PAGE_BUFFER_SIZE];
+    
+    // Page tracking for proper navigation
+    size_t page_offsets[MAX_PAGE_HISTORY]; // Store start offset of each page
+    size_t current_page;                    // Current page index (0-based)
+    size_t total_pages;                     // Total number of pages (calculated on file open)
+    size_t file_size;                       // Total file size in bytes
 
 } App;
 
