@@ -22,6 +22,11 @@
 #define CHARS_PER_LINE 25   // Character width: ~128px / 5px per char = 25 chars
 #define LINES_PER_PAGE 5    // Content lines: Increased to 5 for more text per page
 
+
+// Special sentinel meaning: "when entering the topic, jump to the last page"
+// We use SIZE_MAX because file offsets are otherwise valid, and this value is out-of-band.
+#define FILE_OFFSET_LAST_PAGE ((size_t)(~(size_t)0))
+
 // Start Menu Scene - new main entry point
 void start_menu_scene_on_enter(void* context) {
     App* app = context;
@@ -180,7 +185,7 @@ void credits_scene_on_enter(void* context) {
         "\n"
         "App Development:\n"
         "@armixz - Original idea,\n"
-        "preface & Ch1 content\n"
+        "preface & Ch1-1.1 content\n"
         "\n"
         "@FatherDivine -\n"
         "Completion, polish,\n"
@@ -553,6 +558,36 @@ static void navigate_to_topic(App* app, size_t chapter_index, size_t topic_index
     app->current_page = 0;
 }
 
+
+/* Helper function to navigate to the end (last page) of a specific topic
+ * - Validates indices before accessing arrays
+ * - Resets pagination state so topic_scene_on_enter() will recompute pages
+ * - Uses a sentinel file_offset so topic_scene_on_enter() jumps to last page
+ */
+static void navigate_to_topic_end(App* app, size_t chapter_index, size_t topic_index) {
+    // Validate chapter index
+    if(chapter_index >= number_of_chapters) {
+        return;
+    }
+
+    // Validate topic index
+    if(topic_index >= chapters[chapter_index].number_of_topics) {
+        return;
+    }
+
+    // Update current positions
+    app->current_chapter_index = chapter_index;
+    app->chapter_selected_index = topic_index;
+    app->current_topic = chapters[chapter_index].content[topic_index].file_path;
+
+    // Reset pagination state so on_enter() will initialize
+    app->total_pages = 0;
+    app->current_page = 0;
+
+    // Set a sentinel telling on_enter() to go to last page once initialized
+    app->file_offset = FILE_OFFSET_LAST_PAGE;
+}
+
 // Paged topic viewer: reads one page from file_offset into page_buffer
 void topic_scene_on_enter(void* context) {
     furi_assert(context);
@@ -568,6 +603,7 @@ void topic_scene_on_enter(void* context) {
         return;
     }
 
+
     // If this is first entry, initialize pages
     if(app->total_pages == 0) {
         if(!init_file_pages(app)) {
@@ -577,7 +613,21 @@ void topic_scene_on_enter(void* context) {
             view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
             return;
         }
-        app->current_page = find_page_from_offset(app, app->file_offset);
+
+        // If caller requested "jump to the last page", do it now that pagination exists
+        if(app->file_offset == FILE_OFFSET_LAST_PAGE) {
+            if(app->total_pages > 0) {
+                app->current_page = app->total_pages - 1;
+                app->file_offset = app->page_offsets[app->current_page];
+            } else {
+                // Edge case: empty topic/file—treat as page 0
+                app->current_page = 0;
+                app->file_offset = 0;
+            }
+        } else {
+            // Normal case: compute page from current offset
+            app->current_page = find_page_from_offset(app, app->file_offset);
+        }
     }
 
     // Enable backlight if setting is on
@@ -651,17 +701,57 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
             }
             return true;
         }
-        if(event.event == PrevPageEvent) {
-            // Go to previous page if not at beginning
-            if(app->current_page > 0) {
-                app->current_page--;
-                app->file_offset = app->page_offsets[app->current_page];
-                // Refresh the current scene
-                topic_scene_on_exit(app);
-                topic_scene_on_enter(app);
-            }
+
+    if(event.event == PrevPageEvent) {
+        // Case 1: We are NOT on the first page of this topic — just go back one page
+        if(app->current_page > 0) {
+            app->current_page--;
+            app->file_offset = app->page_offsets[app->current_page];
+            topic_scene_on_exit(app);
+            topic_scene_on_enter(app);
             return true;
         }
+
+        // Case 2: We ARE on the first page — try to "roll back" to the previous topic/chapter
+        size_t current_chapter = app->current_chapter_index;
+        size_t current_topic = app->chapter_selected_index;
+
+        // Validate current chapter index before accessing array
+        if(current_chapter >= number_of_chapters) {
+            return true; // Invalid state, avoid crash
+        }
+
+        // If there is a previous topic in the same chapter, go to its last page
+        if(current_topic > 0) {
+            navigate_to_topic_end(app, current_chapter, current_topic - 1);
+            topic_scene_on_exit(app);
+            topic_scene_on_enter(app);
+            return true;
+        }
+
+        // Otherwise, if there is a previous chapter, go to its LAST topic and land on the LAST page
+        if(current_chapter > 0) {
+            size_t prev_chapter = current_chapter - 1;
+
+            // Validate previous chapter bounds before accessing
+            if(prev_chapter < number_of_chapters) {
+                size_t prev_num_topics = chapters[prev_chapter].number_of_topics;
+
+                // Only navigate if the previous chapter has topics
+                if(prev_num_topics > 0) {
+                    size_t last_topic_index = prev_num_topics - 1;
+                    navigate_to_topic_end(app, prev_chapter, last_topic_index);
+                    topic_scene_on_exit(app);
+                    topic_scene_on_enter(app);
+                    return true;
+                }
+            }
+        }
+
+        // If we are already at the very beginning of the very first chapter/topic, do nothing
+        return true;
+    }
+
         if(event.event == BookmarkEvent) {
             // Toggle bookmark
             if(app->current_page_bookmarked) {
