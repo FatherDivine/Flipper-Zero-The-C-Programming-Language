@@ -150,6 +150,56 @@ char* wrap_text(const char* text, size_t max_line_width) {
     return wrapped;
 }
 
+// Find a good break point in the buffer, preferring paragraph/sentence/word boundaries
+// Returns the position where the page should end (relative to buffer start)
+static size_t find_page_break(const char* buffer, size_t bytes_read) {
+    if(bytes_read == 0) return 0;
+    
+    // Target is roughly 80% of buffer to find a good break point
+    size_t target = (bytes_read * 4) / 5;
+    if(target < 100) target = bytes_read; // If small, just use all of it
+    
+    // Search backwards from target for a good break point
+    size_t best_break = target;
+    size_t min_pos = target / 2;
+    
+    // Look for paragraph break (double newline) - highest priority
+    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
+        if(buffer[i] == '\n' && buffer[i + 1] == '\n') {
+            return i + 2; // Include both newlines
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Look for sentence end (period/question/exclamation followed by space/newline)
+    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
+        if((buffer[i] == '.' || buffer[i] == '?' || buffer[i] == '!') &&
+           (buffer[i + 1] == ' ' || buffer[i + 1] == '\n')) {
+            return i + 2; // Include punctuation and space
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Look for newline (end of line)
+    for(size_t i = target; i > min_pos; i--) {
+        if(buffer[i] == '\n') {
+            return i + 1; // Include the newline
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Look for word boundary (space)
+    for(size_t i = target; i > min_pos; i--) {
+        if(buffer[i] == ' ') {
+            return i + 1; // Include the space
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Fallback: use target position if no good break found
+    return best_break;
+}
+
 // Paged topic viewer: reads one page from file_offset into page_buffer
 void topic_scene_on_enter(void* context) {
     furi_assert(context);
@@ -165,15 +215,41 @@ void topic_scene_on_enter(void* context) {
         return;
     }
 
+    // Get file size to check if we're at the end
+    size_t file_size = stream_size(app->file_stream);
+    
+    // If offset is beyond file size, reset to beginning
+    if(app->file_offset >= file_size) {
+        app->file_offset = 0;
+    }
+
     // Seek to current page offset
     stream_seek(app->file_stream, app->file_offset, StreamOffsetFromStart);
 
     // Read one page into fixed buffer
     size_t bytes_read =
         stream_read(app->file_stream, (uint8_t*)app->page_buffer, PAGE_BUFFER_SIZE - 1);
-    app->page_buffer[bytes_read] = '\0';
-
+    
     file_stream_close(app->file_stream);
+    
+    if(bytes_read == 0) {
+        // No more content, wrap to beginning
+        app->file_offset = 0;
+        app->current_page_size = 0;
+        widget_add_text_scroll_element(
+            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, "End of document.");
+        view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
+        return;
+    }
+    
+    // Find a sensible break point
+    size_t page_end = find_page_break(app->page_buffer, bytes_read);
+    
+    // Store the actual page size for navigation
+    app->current_page_size = page_end;
+    
+    // Null-terminate at the break point
+    app->page_buffer[page_end] = '\0';
 
     widget_add_text_scroll_element(
         app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, app->page_buffer);
@@ -186,18 +262,17 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == NextPageEvent) {
-            // Advance with some overlap for readability
-            if(app->file_offset + (PAGE_BUFFER_SIZE - 200) > app->file_offset) {
-                app->file_offset += PAGE_BUFFER_SIZE - 200;
-            }
+            // Advance by the actual size of the current page
+            app->file_offset += app->current_page_size;
             // Refresh the current scene instead of pushing a new one
             topic_scene_on_exit(app);
             topic_scene_on_enter(app);
             return true;
         }
         if(event.event == PrevPageEvent) {
-            if(app->file_offset >= PAGE_BUFFER_SIZE) {
-                app->file_offset -= PAGE_BUFFER_SIZE - 200;
+            // Go back by the page size (approximate)
+            if(app->file_offset > app->current_page_size) {
+                app->file_offset -= app->current_page_size;
             } else {
                 app->file_offset = 0;
             }
