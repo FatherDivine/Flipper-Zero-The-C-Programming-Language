@@ -190,7 +190,9 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
             if(app->file_offset + (PAGE_BUFFER_SIZE - 200) > app->file_offset) {
                 app->file_offset += PAGE_BUFFER_SIZE - 200;
             }
-            scene_manager_next_scene(app->scene_manager, TopicScene);
+            // Refresh the current scene instead of pushing a new one
+            topic_scene_on_exit(app);
+            topic_scene_on_enter(app);
             return true;
         }
         if(event.event == PrevPageEvent) {
@@ -199,7 +201,9 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
             } else {
                 app->file_offset = 0;
             }
-            scene_manager_next_scene(app->scene_manager, TopicScene);
+            // Refresh the current scene instead of pushing a new one
+            topic_scene_on_exit(app);
+            topic_scene_on_enter(app);
             return true;
         }
     }
