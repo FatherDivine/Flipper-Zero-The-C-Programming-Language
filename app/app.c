@@ -102,11 +102,11 @@ void app_load_settings(App* app) {
                     app->last_topic_path[sizeof(app->last_topic_path) - 1] = '\0';
                     app->has_reading_position = (strlen(app->last_topic_path) > 0);
                 } else if(strncmp(line, "last_offset=", 12) == 0) {
-                    app->last_file_offset = (size_t)atol(line + 12);
+                    app->last_file_offset = (size_t)strtoul(line + 12, NULL, 10);
                 } else if(strncmp(line, "last_chapter=", 13) == 0) {
-                    app->last_chapter_index = (size_t)atol(line + 13);
+                    app->last_chapter_index = (size_t)strtoul(line + 13, NULL, 10);
                 } else if(strncmp(line, "last_topic_idx=", 15) == 0) {
-                    app->last_topic_index = (size_t)atol(line + 15);
+                    app->last_topic_index = (size_t)strtoul(line + 15, NULL, 10);
                 } else if(strncmp(line, "bookmark=", 9) == 0) {
                     // Format: bookmark=topic_path|offset
                     if(app->bookmark_count < MAX_BOOKMARKS) {
@@ -115,7 +115,7 @@ void app_load_settings(App* app) {
                             *sep = '\0';
                             strncpy(app->bookmark_topics[app->bookmark_count], line + 9, 127);
                             app->bookmark_topics[app->bookmark_count][127] = '\0';
-                            app->bookmark_offsets[app->bookmark_count] = (size_t)atol(sep + 1);
+                            app->bookmark_offsets[app->bookmark_count] = (size_t)strtoul(sep + 1, NULL, 10);
                             app->bookmark_count++;
                         }
                     }

@@ -416,16 +416,17 @@ static bool load_current_page(App* app) {
     // Add newlines to ensure footer is at bottom
     // Count existing newlines in content
     size_t content_lines = 1;
+    size_t col_count = 0;
     for(size_t i = 0; i < page_content_len; i++) {
-        if(app->page_buffer[i] == '\n') content_lines++;
-        // Also count wrapped lines
-        size_t line_len = 0;
-        while(i < page_content_len && app->page_buffer[i] != '\n') {
-            line_len++;
-            i++;
-        }
-        if(line_len > CHARS_PER_LINE) {
-            content_lines += line_len / CHARS_PER_LINE;
+        if(app->page_buffer[i] == '\n') {
+            content_lines++;
+            col_count = 0;
+        } else {
+            col_count++;
+            if(col_count >= CHARS_PER_LINE) {
+                content_lines++;
+                col_count = 0;
+            }
         }
     }
     
