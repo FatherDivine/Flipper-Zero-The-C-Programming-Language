@@ -5,10 +5,20 @@
 #include "../buffer/dynamic_buffer.h"
 #include <string.h>
 
-// Display parameters for Flipper Zero screen
-// Using 4 lines for content + 1 line for footer (page numbers, navigation)
-#define CHARS_PER_LINE 25   // ~128px / 5px per char
-#define LINES_PER_PAGE 4    // 4 lines for content, leaving room for footer
+/* Display parameters for Flipper Zero screen (128x64 pixels)
+ * 
+ * The screen is divided into content area and footer area:
+ * - Content area: Lines 1-5 (main text from the book)
+ * - Footer area: Line 6 (navigation hints and page numbers - "the lower third")
+ * 
+ * The footer (lower third) contains:
+ * - Left arrow '<' indicating previous page navigation
+ * - Right arrow '>' indicating next page navigation  
+ * - Page counter [current/total] in the center
+ * - Optional bookmark indicator '*' when page is bookmarked
+ */
+#define CHARS_PER_LINE 25   // Character width: ~128px / 5px per char = 25 chars
+#define LINES_PER_PAGE 5    // Content lines: Increased to 5 for more text per page
 
 // Start Menu Scene - new main entry point
 void start_menu_scene_on_enter(void* context) {
@@ -229,8 +239,26 @@ void bookmarks_scene_on_exit(void* context) {
     submenu_reset(app->submenu);
 }
 
-// Calculate page layout with proper line wrapping
-// Returns the number of bytes that fit on this page
+/* Calculate page layout with proper line wrapping
+ * 
+ * This function determines how many bytes of text fit on a single page
+ * while respecting word boundaries and line length constraints.
+ * 
+ * Parameters:
+ *   buffer - Text buffer to paginate
+ *   buffer_len - Length of the buffer in bytes
+ *   chars_per_line - Maximum characters per line (25 for Flipper Zero)
+ *   max_lines - Maximum lines per page (5 for content area)
+ * 
+ * Returns:
+ *   Number of bytes that fit on this page, preferring to break at word boundaries
+ * 
+ * Algorithm:
+ *   - Tracks current column and line position
+ *   - Respects explicit newlines in the text
+ *   - Wraps long lines at word boundaries (spaces) when possible
+ *   - Returns early if max_lines is reached
+ */
 static size_t calculate_page_content(const char* buffer, size_t buffer_len, size_t chars_per_line, size_t max_lines) {
     if(buffer_len == 0) return 0;
     
@@ -297,7 +325,18 @@ static size_t calculate_page_content(const char* buffer, size_t buffer_len, size
     return i;
 }
 
-// Initialize file and calculate total pages
+/* Initialize file and calculate total pages
+ * 
+ * This function pre-scans the entire file to:
+ * 1. Determine the total number of pages
+ * 2. Store the byte offset where each page starts (in page_offsets array)
+ * 
+ * This allows for accurate page numbering and direct page navigation.
+ * The scan respects the same line wrapping rules as display, ensuring
+ * consistent pagination throughout the reading experience.
+ * 
+ * Returns true on success, false on file access error
+ */
 static bool init_file_pages(App* app) {
     const char* file_path = app->current_topic;
     
@@ -357,7 +396,23 @@ static bool init_file_pages(App* app) {
     return true;
 }
 
-// Load current page content into display buffer
+/* Load current page content into display buffer
+ * 
+ * This function:
+ * 1. Reads content from file at the current offset
+ * 2. Calculates how much content fits on this page
+ * 3. Builds the display buffer with content and footer
+ * 
+ * The display buffer structure:
+ * - Lines 1-5: Book content (paginated text)
+ * - Line 6: Footer (the "lower third" - navigation and page numbers)
+ * 
+ * Footer format:
+ * - Without bookmark: "<   [page/total]   >"
+ * - With bookmark:    "< * [page/total] >"
+ * 
+ * Returns true on success, false on file access error
+ */
 static bool load_current_page(App* app) {
     const char* file_path = app->current_topic;
     
@@ -390,14 +445,14 @@ static bool load_current_page(App* app) {
     // Build display buffer with content and footer
     memset(app->display_buffer, 0, DISPLAY_BUFFER_SIZE);
     
-    // Copy page content
+    // Copy page content (lines 1-5)
     size_t display_pos = 0;
     for(size_t i = 0; i < page_content_len && display_pos < DISPLAY_BUFFER_SIZE - 64; i++) {
         app->display_buffer[display_pos++] = app->page_buffer[i];
     }
     
-    // Add newlines to ensure footer is at bottom
-    // Count existing newlines in content
+    // Count how many lines the content actually used
+    // This determines how many padding newlines we need before the footer
     size_t content_lines = 1;
     size_t col_count = 0;
     for(size_t i = 0; i < page_content_len; i++) {
@@ -413,22 +468,27 @@ static bool load_current_page(App* app) {
         }
     }
     
-    // Add padding newlines if needed (we want footer on line 5)
+    // Add padding newlines to push footer to line 6
+    // We want the footer on line 6, so pad to fill lines up to line 5
     while(content_lines < LINES_PER_PAGE && display_pos < DISPLAY_BUFFER_SIZE - 32) {
         app->display_buffer[display_pos++] = '\n';
         content_lines++;
     }
     
-    // Ensure there's a newline before footer
+    // Ensure there's a newline before the footer (separates content from footer)
     if(display_pos > 0 && app->display_buffer[display_pos - 1] != '\n') {
         app->display_buffer[display_pos++] = '\n';
     }
     
-    // Check if page is bookmarked
+    // Check if current page is bookmarked (for footer display)
     app->current_page_bookmarked = app_is_page_bookmarked(app);
     
-    // Add footer: navigation hints and page number
-    // Format: < [page/total] > or *< [page/total] > if bookmarked
+    /* Build the footer (lower third) on line 6
+     * Footer shows: navigation arrows + page numbers + bookmark indicator
+     * Format examples:
+     *   "<   [1/42]   >"  - Normal page
+     *   "< * [5/42] >"    - Bookmarked page (asterisk indicates bookmark)
+     */
     char footer[64];
     if(app->current_page_bookmarked) {
         snprintf(footer, sizeof(footer), "< * [%zu/%zu] >", 
@@ -438,14 +498,14 @@ static bool load_current_page(App* app) {
                 app->current_page + 1, app->total_pages);
     }
     
-    // Center the footer
+    // Center the footer horizontally on the line
     size_t footer_len = strlen(footer);
     size_t padding = (CHARS_PER_LINE - footer_len) / 2;
     for(size_t i = 0; i < padding && display_pos < DISPLAY_BUFFER_SIZE - footer_len - 1; i++) {
         app->display_buffer[display_pos++] = ' ';
     }
     
-    // Append footer
+    // Append the centered footer text
     for(size_t i = 0; i < footer_len && display_pos < DISPLAY_BUFFER_SIZE - 1; i++) {
         app->display_buffer[display_pos++] = footer[i];
     }
@@ -523,13 +583,48 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == NextPageEvent) {
-            // Go to next page if not at end
+            // Check if we're at the last page of this topic
             if(app->current_page < app->total_pages - 1) {
+                // Not at end - advance to next page within this topic
                 app->current_page++;
                 app->file_offset = app->page_offsets[app->current_page];
                 // Refresh the current scene
                 topic_scene_on_exit(app);
                 topic_scene_on_enter(app);
+            } else {
+                // At last page of this topic - try to roll over to next topic/chapter
+                // This implements "like a real book" behavior
+                
+                size_t current_chapter = app->current_chapter_index;
+                size_t current_topic = app->chapter_selected_index;
+                Chapter curr_chapter = chapters[current_chapter];
+                
+                // Check if there's a next topic in the current chapter
+                if(current_topic + 1 < curr_chapter.number_of_topics) {
+                    // Move to next topic in same chapter
+                    app->chapter_selected_index = current_topic + 1;
+                    app->current_topic = curr_chapter.content[current_topic + 1].file_path;
+                    app->file_offset = 0;
+                    app->total_pages = 0;
+                    app->current_page = 0;
+                    topic_scene_on_exit(app);
+                    topic_scene_on_enter(app);
+                } else if(current_chapter + 1 < number_of_chapters) {
+                    // Move to first topic of next chapter
+                    app->current_chapter_index = current_chapter + 1;
+                    app->chapter_selected_index = 0;
+                    Chapter next_chapter = chapters[current_chapter + 1];
+                    if(next_chapter.number_of_topics > 0) {
+                        app->current_topic = next_chapter.content[0].file_path;
+                        app->file_offset = 0;
+                        app->total_pages = 0;
+                        app->current_page = 0;
+                        topic_scene_on_exit(app);
+                        topic_scene_on_enter(app);
+                    }
+                }
+                // If we're at the very last page of the last chapter, do nothing
+                // (already at the end of the book)
             }
             return true;
         }
