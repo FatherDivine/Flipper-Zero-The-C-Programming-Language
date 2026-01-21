@@ -33,6 +33,7 @@ typedef struct App {
     size_t file_offset;
     size_t current_page_size; // Number of bytes displayed on current page
     char page_buffer[PAGE_BUFFER_SIZE];
+    size_t page_bytes_displayed; // Track actual bytes displayed on current page
 
 } App;
 

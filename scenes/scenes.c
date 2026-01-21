@@ -274,6 +274,7 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
             if(app->file_offset > app->current_page_size) {
                 app->file_offset -= app->current_page_size;
             } else {
+                // Near the beginning of file, just go to start
                 app->file_offset = 0;
             }
             // Refresh the current scene instead of pushing a new one
