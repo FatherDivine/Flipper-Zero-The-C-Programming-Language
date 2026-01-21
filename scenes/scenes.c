@@ -150,6 +150,23 @@ char* wrap_text(const char* text, size_t max_line_width) {
     return wrapped;
 }
 
+// Find the last word boundary (space or newline) in a buffer
+// Returns the index of the character after the boundary
+static size_t find_last_word_boundary(const char* buffer, size_t length) {
+    if(length == 0) return 0;
+    
+    // Start from the end and look backwards for a space or newline
+    for(size_t i = length - 1; i > 0; i--) {
+        if(buffer[i] == ' ' || buffer[i] == '\n') {
+            // Found a boundary, return position after the space/newline
+            return i + 1;
+        }
+    }
+    
+    // No word boundary found, use the full length
+    return length;
+}
+
 // Paged topic viewer: reads one page from file_offset into page_buffer
 void topic_scene_on_enter(void* context) {
     furi_assert(context);
@@ -171,9 +188,23 @@ void topic_scene_on_enter(void* context) {
     // Read one page into fixed buffer
     size_t bytes_read =
         stream_read(app->file_stream, (uint8_t*)app->page_buffer, PAGE_BUFFER_SIZE - 1);
-    app->page_buffer[bytes_read] = '\0';
-
+    
     file_stream_close(app->file_stream);
+    
+    // If we read something, find the last word boundary
+    if(bytes_read > 0) {
+        // Find the last complete word to avoid breaking mid-word
+        size_t display_length = find_last_word_boundary(app->page_buffer, bytes_read);
+        
+        // Store how many bytes we're actually displaying
+        app->page_bytes_displayed = display_length;
+        
+        // Null-terminate at the word boundary
+        app->page_buffer[display_length] = '\0';
+    } else {
+        app->page_bytes_displayed = 0;
+        app->page_buffer[0] = '\0';
+    }
 
     widget_add_text_scroll_element(
         app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, app->page_buffer);
@@ -186,9 +217,9 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == NextPageEvent) {
-            // Advance with some overlap for readability
-            if(app->file_offset + (PAGE_BUFFER_SIZE - 200) > app->file_offset) {
-                app->file_offset += PAGE_BUFFER_SIZE - 200;
+            // Advance by exactly how many bytes we displayed
+            if(app->page_bytes_displayed > 0) {
+                app->file_offset += app->page_bytes_displayed;
             }
             // Refresh the current scene instead of pushing a new one
             topic_scene_on_exit(app);
@@ -196,8 +227,9 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
             return true;
         }
         if(event.event == PrevPageEvent) {
+            // Go back by one page buffer size, but not below 0
             if(app->file_offset >= PAGE_BUFFER_SIZE) {
-                app->file_offset -= PAGE_BUFFER_SIZE - 200;
+                app->file_offset -= PAGE_BUFFER_SIZE;
             } else {
                 app->file_offset = 0;
             }
