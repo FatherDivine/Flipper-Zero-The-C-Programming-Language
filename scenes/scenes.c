@@ -9,9 +9,9 @@
  * 
  * The screen is divided into content area and footer area:
  * - Content area: Lines 1-5 (main text from the book)
- * - Footer area: Line 6 (navigation hints and page numbers)
- *   Note: The footer is sometimes called the "lower third" as it occupies
- *   the bottom portion of the screen with navigation/status information
+ * - Footer area: Line 6 (navigation and page numbers)
+ *   Note: User requirements refer to this as the "lower third" meaning
+ *   the bottom status area, though it's actually just the bottom line
  * 
  * The footer contains:
  * - Left arrow '<' indicating previous page navigation
@@ -628,10 +628,11 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
                     return true; // Invalid state, don't crash
                 }
                 
-                Chapter curr_chapter = chapters[current_chapter];
+                // Access number of topics directly to avoid struct copy
+                size_t num_topics = chapters[current_chapter].number_of_topics;
                 
                 // Check if there's a next topic in the current chapter
-                if(current_topic + 1 < curr_chapter.number_of_topics) {
+                if(current_topic + 1 < num_topics) {
                     // Move to next topic in same chapter
                     navigate_to_topic(app, current_chapter, current_topic + 1);
                     topic_scene_on_exit(app);
