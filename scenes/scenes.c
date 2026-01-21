@@ -150,22 +150,54 @@ char* wrap_text(const char* text, size_t max_line_width) {
     return wrapped;
 }
 
-// Find the last word boundary (space, newline, or tab) in a buffer
-// Returns the index of the character after the boundary
-static size_t find_last_word_boundary(const char* buffer, size_t length) {
-    if(length == 0) return 0;
+// Find a good break point in the buffer, preferring paragraph/sentence/word boundaries
+// Returns the position where the page should end (relative to buffer start)
+static size_t find_page_break(const char* buffer, size_t bytes_read) {
+    if(bytes_read == 0) return 0;
     
-    // Start from the end and look backwards for a space, newline, or tab
-    for(size_t i = length; i > 0; i--) {
-        char c = buffer[i - 1];
-        if(c == ' ' || c == '\n' || c == '\t') {
-            // Found a boundary, return position after the space/newline/tab
-            return i;
+    // Target is roughly 80% of buffer to find a good break point
+    size_t target = (bytes_read * 4) / 5;
+    if(target < 100) target = bytes_read; // If small, just use all of it
+    
+    // Search backwards from target for a good break point
+    size_t best_break = target;
+    size_t min_pos = target / 2;
+    
+    // Look for paragraph break (double newline) - highest priority
+    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
+        if(buffer[i] == '\n' && buffer[i + 1] == '\n') {
+            return i + 2; // Include both newlines
         }
+        if(i == 0) break; // Prevent underflow
     }
     
-    // No word boundary found, use the full length
-    return length;
+    // Look for sentence end (period/question/exclamation followed by space/newline)
+    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
+        if((buffer[i] == '.' || buffer[i] == '?' || buffer[i] == '!') &&
+           (buffer[i + 1] == ' ' || buffer[i + 1] == '\n')) {
+            return i + 2; // Include punctuation and space
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Look for newline (end of line)
+    for(size_t i = target; i > min_pos; i--) {
+        if(buffer[i] == '\n') {
+            return i + 1; // Include the newline
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Look for word boundary (space)
+    for(size_t i = target; i > min_pos; i--) {
+        if(buffer[i] == ' ') {
+            return i + 1; // Include the space
+        }
+        if(i == 0) break; // Prevent underflow
+    }
+    
+    // Fallback: use target position if no good break found
+    return best_break;
 }
 
 // Paged topic viewer: reads one page from file_offset into page_buffer
@@ -183,6 +215,14 @@ void topic_scene_on_enter(void* context) {
         return;
     }
 
+    // Get file size to check if we're at the end
+    size_t file_size = stream_size(app->file_stream);
+    
+    // If offset is beyond file size, reset to beginning
+    if(app->file_offset >= file_size) {
+        app->file_offset = 0;
+    }
+
     // Seek to current page offset
     stream_seek(app->file_stream, app->file_offset, StreamOffsetFromStart);
 
@@ -192,20 +232,24 @@ void topic_scene_on_enter(void* context) {
     
     file_stream_close(app->file_stream);
     
-    // If we read something, find the last word boundary
-    if(bytes_read > 0) {
-        // Find the last complete word to avoid breaking mid-word
-        size_t display_length = find_last_word_boundary(app->page_buffer, bytes_read);
-        
-        // Store how many bytes we're actually displaying
-        app->page_bytes_displayed = display_length;
-        
-        // Null-terminate at the word boundary
-        app->page_buffer[display_length] = '\0';
-    } else {
-        app->page_bytes_displayed = 0;
-        app->page_buffer[0] = '\0';
+    if(bytes_read == 0) {
+        // No more content, wrap to beginning
+        app->file_offset = 0;
+        app->current_page_size = 0;
+        widget_add_text_scroll_element(
+            app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, "End of document.");
+        view_dispatcher_switch_to_view(app->view_dispatcher, WidgetView);
+        return;
     }
+    
+    // Find a sensible break point
+    size_t page_end = find_page_break(app->page_buffer, bytes_read);
+    
+    // Store the actual page size for navigation
+    app->current_page_size = page_end;
+    
+    // Null-terminate at the break point
+    app->page_buffer[page_end] = '\0';
 
     widget_add_text_scroll_element(
         app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, app->page_buffer);
@@ -218,22 +262,17 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
 
     if(event.type == SceneManagerEventTypeCustom) {
         if(event.event == NextPageEvent) {
-            // Advance by exactly how many bytes we displayed
-            if(app->page_bytes_displayed > 0) {
-                app->file_offset += app->page_bytes_displayed;
-            }
+            // Advance by the actual size of the current page
+            app->file_offset += app->current_page_size;
             // Refresh the current scene instead of pushing a new one
             topic_scene_on_exit(app);
             topic_scene_on_enter(app);
             return true;
         }
         if(event.event == PrevPageEvent) {
-            // Go back by approximately one page worth of content
-            // Use the current page size as an estimate, or PAGE_BUFFER_SIZE as a fallback
-            size_t back_amount = (app->page_bytes_displayed > 0) ? app->page_bytes_displayed : PAGE_BUFFER_SIZE;
-            
-            if(app->file_offset >= back_amount) {
-                app->file_offset -= back_amount;
+            // Go back by the page size (approximate)
+            if(app->file_offset > app->current_page_size) {
+                app->file_offset -= app->current_page_size;
             } else {
                 // Near the beginning of file, just go to start
                 app->file_offset = 0;
