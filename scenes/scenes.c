@@ -532,8 +532,19 @@ static size_t find_page_from_offset(App* app, size_t offset) {
 
 /* Helper function to navigate to a specific topic
  * Resets pagination state and refreshes the scene
+ * Validates indices before accessing arrays
  */
 static void navigate_to_topic(App* app, size_t chapter_index, size_t topic_index) {
+    // Validate chapter index
+    if(chapter_index >= number_of_chapters) {
+        return;
+    }
+    
+    // Validate topic index
+    if(topic_index >= chapters[chapter_index].number_of_topics) {
+        return;
+    }
+    
     app->current_chapter_index = chapter_index;
     app->chapter_selected_index = topic_index;
     app->current_topic = chapters[chapter_index].content[topic_index].file_path;
@@ -621,6 +632,7 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
                     topic_scene_on_enter(app);
                 } else if(current_chapter + 1 < number_of_chapters) {
                     // Move to first topic of next chapter
+                    // Verify next chapter has topics before navigating
                     Chapter next_chapter = chapters[current_chapter + 1];
                     if(next_chapter.number_of_topics > 0) {
                         navigate_to_topic(app, current_chapter + 1, 0);
