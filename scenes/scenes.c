@@ -166,7 +166,7 @@ void topic_scene_on_enter(void* context) {
     }
 
     // Seek to current page offset
-    stream_seek(app->file_stream, app->file_offset, StreamSeekOriginBegin);
+    stream_seek(app->file_stream, app->file_offset, StreamOffsetFromStart);
 
     // Read one page into fixed buffer
     size_t bytes_read =
