@@ -622,6 +622,12 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
                 
                 size_t current_chapter = app->current_chapter_index;
                 size_t current_topic = app->chapter_selected_index;
+                
+                // Validate current chapter index before accessing array
+                if(current_chapter >= number_of_chapters) {
+                    return true; // Invalid state, don't crash
+                }
+                
                 Chapter curr_chapter = chapters[current_chapter];
                 
                 // Check if there's a next topic in the current chapter
