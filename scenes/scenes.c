@@ -156,10 +156,10 @@ static size_t find_last_word_boundary(const char* buffer, size_t length) {
     if(length == 0) return 0;
     
     // Start from the end and look backwards for a space or newline
-    for(size_t i = length - 1; i > 0; i--) {
-        if(buffer[i] == ' ' || buffer[i] == '\n') {
+    for(size_t i = length; i > 0; i--) {
+        if(buffer[i - 1] == ' ' || buffer[i - 1] == '\n') {
             // Found a boundary, return position after the space/newline
-            return i + 1;
+            return i;
         }
     }
     
@@ -227,9 +227,11 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
             return true;
         }
         if(event.event == PrevPageEvent) {
-            // Go back by one page buffer size, but not below 0
-            if(app->file_offset >= PAGE_BUFFER_SIZE) {
-                app->file_offset -= PAGE_BUFFER_SIZE;
+            // Go back by approximately one page worth of content
+            // We use page_bytes_displayed as an estimate, or PAGE_BUFFER_SIZE if not available
+            size_t back_amount = app->page_bytes_displayed > 0 ? app->page_bytes_displayed : PAGE_BUFFER_SIZE;
+            if(app->file_offset >= back_amount) {
+                app->file_offset -= back_amount;
             } else {
                 app->file_offset = 0;
             }
