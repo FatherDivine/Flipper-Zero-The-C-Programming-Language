@@ -155,40 +155,45 @@ char* wrap_text(const char* text, size_t max_line_width) {
 static size_t find_page_break(const char* buffer, size_t bytes_read) {
     if(bytes_read == 0) return 0;
     
-    // Target is roughly 80% of buffer to leave room for next page
+    // Target is roughly 80% of buffer to find a good break point
     size_t target = (bytes_read * 4) / 5;
     if(target < 100) target = bytes_read; // If small, just use all of it
     
     // Search backwards from target for a good break point
     size_t best_break = target;
+    size_t min_pos = target / 2;
     
     // Look for paragraph break (double newline) - highest priority
-    for(size_t i = target; i > target / 2 && i < bytes_read - 1; i--) {
+    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
         if(buffer[i] == '\n' && buffer[i + 1] == '\n') {
             return i + 2; // Include both newlines
         }
+        if(i == 0) break; // Prevent underflow
     }
     
     // Look for sentence end (period/question/exclamation followed by space/newline)
-    for(size_t i = target; i > target / 2 && i < bytes_read - 1; i--) {
+    for(size_t i = target; i > min_pos && i < bytes_read - 1; i--) {
         if((buffer[i] == '.' || buffer[i] == '?' || buffer[i] == '!') &&
            (buffer[i + 1] == ' ' || buffer[i + 1] == '\n')) {
             return i + 2; // Include punctuation and space
         }
+        if(i == 0) break; // Prevent underflow
     }
     
     // Look for newline (end of line)
-    for(size_t i = target; i > target / 2; i--) {
+    for(size_t i = target; i > min_pos; i--) {
         if(buffer[i] == '\n') {
             return i + 1; // Include the newline
         }
+        if(i == 0) break; // Prevent underflow
     }
     
     // Look for word boundary (space)
-    for(size_t i = target; i > target / 2; i--) {
+    for(size_t i = target; i > min_pos; i--) {
         if(buffer[i] == ' ') {
             return i + 1; // Include the space
         }
+        if(i == 0) break; // Prevent underflow
     }
     
     // Fallback: use target position if no good break found
