@@ -9,9 +9,11 @@
  * 
  * The screen is divided into content area and footer area:
  * - Content area: Lines 1-5 (main text from the book)
- * - Footer area: Line 6 (navigation hints and page numbers - "the lower third")
+ * - Footer area: Line 6 (navigation hints and page numbers)
+ *   Note: The footer is sometimes called the "lower third" as it occupies
+ *   the bottom portion of the screen with navigation/status information
  * 
- * The footer (lower third) contains:
+ * The footer contains:
  * - Left arrow '<' indicating previous page navigation
  * - Right arrow '>' indicating next page navigation  
  * - Page counter [current/total] in the center
@@ -405,7 +407,7 @@ static bool init_file_pages(App* app) {
  * 
  * The display buffer structure:
  * - Lines 1-5: Book content (paginated text)
- * - Line 6: Footer (the "lower third" - navigation and page numbers)
+ * - Line 6: Footer/status line (navigation and page numbers)
  * 
  * Footer format:
  * - Without bookmark: "<   [page/total]   >"
@@ -483,7 +485,7 @@ static bool load_current_page(App* app) {
     // Check if current page is bookmarked (for footer display)
     app->current_page_bookmarked = app_is_page_bookmarked(app);
     
-    /* Build the footer (lower third) on line 6
+    /* Build the footer (status line) on line 6
      * Footer shows: navigation arrows + page numbers + bookmark indicator
      * Format examples:
      *   "<   [1/42]   >"  - Normal page
@@ -526,6 +528,18 @@ static size_t find_page_from_offset(App* app, size_t offset) {
         }
     }
     return app->total_pages > 0 ? app->total_pages - 1 : 0;
+}
+
+/* Helper function to navigate to a specific topic
+ * Resets pagination state and refreshes the scene
+ */
+static void navigate_to_topic(App* app, size_t chapter_index, size_t topic_index) {
+    app->current_chapter_index = chapter_index;
+    app->chapter_selected_index = topic_index;
+    app->current_topic = chapters[chapter_index].content[topic_index].file_path;
+    app->file_offset = 0;
+    app->total_pages = 0;
+    app->current_page = 0;
 }
 
 // Paged topic viewer: reads one page from file_offset into page_buffer
@@ -602,23 +616,14 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
                 // Check if there's a next topic in the current chapter
                 if(current_topic + 1 < curr_chapter.number_of_topics) {
                     // Move to next topic in same chapter
-                    app->chapter_selected_index = current_topic + 1;
-                    app->current_topic = curr_chapter.content[current_topic + 1].file_path;
-                    app->file_offset = 0;
-                    app->total_pages = 0;
-                    app->current_page = 0;
+                    navigate_to_topic(app, current_chapter, current_topic + 1);
                     topic_scene_on_exit(app);
                     topic_scene_on_enter(app);
                 } else if(current_chapter + 1 < number_of_chapters) {
                     // Move to first topic of next chapter
-                    app->current_chapter_index = current_chapter + 1;
-                    app->chapter_selected_index = 0;
                     Chapter next_chapter = chapters[current_chapter + 1];
                     if(next_chapter.number_of_topics > 0) {
-                        app->current_topic = next_chapter.content[0].file_path;
-                        app->file_offset = 0;
-                        app->total_pages = 0;
-                        app->current_page = 0;
+                        navigate_to_topic(app, current_chapter + 1, 0);
                         topic_scene_on_exit(app);
                         topic_scene_on_enter(app);
                     }
