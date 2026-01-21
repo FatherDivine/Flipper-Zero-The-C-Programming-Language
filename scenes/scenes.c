@@ -639,8 +639,7 @@ bool topic_scene_on_event(void* context, SceneManagerEvent event) {
                 } else if(current_chapter + 1 < number_of_chapters) {
                     // Move to first topic of next chapter
                     // Verify next chapter has topics before navigating
-                    Chapter next_chapter = chapters[current_chapter + 1];
-                    if(next_chapter.number_of_topics > 0) {
+                    if(chapters[current_chapter + 1].number_of_topics > 0) {
                         navigate_to_topic(app, current_chapter + 1, 0);
                         topic_scene_on_exit(app);
                         topic_scene_on_enter(app);
