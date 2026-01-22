@@ -66,8 +66,9 @@ Settings are automatically saved to `app_data/c_book/settings.config` and includ
   - Normal Flipper backlight timeout behavior
   - Screen will turn off after inactivity
 
-- **Timeout Setting**: Configures the desired timeout
-  - (0=always on, 10s, 30s, 60s, 90s)
+- **Timeout Setting**: Configures the desired timeout (setting is saved for future use)
+  - Currently the backlight stays on continuously when enabled (timeout functionality planned for future release)
+  - Available timeout options: Always On, 10s, 30s, 60s, 90s
 
 ### Navigation Controls
 

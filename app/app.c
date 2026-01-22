@@ -270,9 +270,10 @@ bool app_is_page_bookmarked(App* app) {
 void app_set_backlight(App* app, bool on) {
     app->backlight_on = on;
     if(on) {
-        // When backlight is enabled, enforce it on
-        // The timeout setting can be used in future enhancements
-        // For now, we keep it simple: ON = always on while in app
+        // When backlight is enabled, enforce it on continuously
+        // Note: The timeout_sec setting is saved but not yet enforced.
+        // Future enhancement will implement actual timeout behavior using a timer.
+        // For now: ON = always on while in app regardless of timeout_sec value
         notification_message(app->notifications, &sequence_display_backlight_enforce_on);
     } else {
         // When backlight is disabled, restore automatic system control

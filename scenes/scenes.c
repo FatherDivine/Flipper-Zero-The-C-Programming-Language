@@ -142,8 +142,8 @@ void options_scene_on_enter(void* context) {
         submenu_add_item(app->submenu, "Backlight: OFF", OptionsBacklight, options_callback, app);
     }
     
-    // Backlight timeout option
-    char timeout_str[24];
+    // Backlight timeout option (use static buffer to ensure string persists)
+    static char timeout_str[24];
     if(app->backlight_timeout_sec == 0) {
         snprintf(timeout_str, sizeof(timeout_str), "Timeout: Always On");
     } else {
