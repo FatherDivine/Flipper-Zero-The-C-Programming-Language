@@ -158,6 +158,9 @@ void options_scene_on_enter(void* context) {
         submenu_add_item(app->submenu, "Nav: Left/Right", OptionsSwapArrowKeys, options_callback, app);
     }
 
+    // Restore last selected option
+    submenu_set_selected_item(app->submenu, app->options_selected_index);
+
     view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
 }
 
@@ -276,6 +279,9 @@ void bookmarks_scene_on_enter(void* context) {
             submenu_add_item(app->submenu, filename, i, bookmarks_callback, app);
         }
     }
+
+    // Restore last selected bookmark
+    submenu_set_selected_item(app->submenu, app->bookmarks_selected_index);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
 }

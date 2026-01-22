@@ -34,6 +34,8 @@ typedef struct App {
     // Menu selection memory
     uint32_t main_menu_selected_index;
     uint32_t chapter_selected_index;
+    uint32_t bookmarks_selected_index;
+    uint32_t options_selected_index;
 
     // Paging state
     size_t file_offset;
