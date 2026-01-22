@@ -118,13 +118,24 @@ bool widget_input_callback(InputEvent* event, void* context) {
     static uint32_t ok_press_start = 0;
 
     if(event->type == InputTypeShort) {
-        if(event->key == InputKeyRight) {
+        // Determine which keys to use for paging based on swap_arrow_keys setting
+        InputKey next_key = app->swap_arrow_keys ? InputKeyDown : InputKeyRight;
+        InputKey prev_key = app->swap_arrow_keys ? InputKeyUp : InputKeyLeft;
+        
+        if(event->key == next_key) {
             scene_manager_handle_custom_event(app->scene_manager, NextPageEvent);
             return true;
         }
-        if(event->key == InputKeyLeft) {
+        if(event->key == prev_key) {
             scene_manager_handle_custom_event(app->scene_manager, PrevPageEvent);
             return true;
+        }
+        // When swap is enabled, let Left/Right pass through for widget scroll
+        // When swap is disabled, let Up/Down pass through for widget scroll
+        InputKey scroll_key1 = app->swap_arrow_keys ? InputKeyLeft : InputKeyUp;
+        InputKey scroll_key2 = app->swap_arrow_keys ? InputKeyRight : InputKeyDown;
+        if(event->key == scroll_key1 || event->key == scroll_key2) {
+            return false;
         }
     }
     

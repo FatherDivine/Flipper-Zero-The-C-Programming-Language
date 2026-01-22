@@ -33,6 +33,8 @@ typedef enum {
     StartMenuCredits,
     // Options events
     OptionsBacklight,
+    OptionsBacklightTimeout,
+    OptionsSwapArrowKeys,
 } MainEvent;
 
 // Start menu scene

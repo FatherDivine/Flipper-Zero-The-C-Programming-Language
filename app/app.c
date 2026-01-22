@@ -43,6 +43,8 @@ App* app_alloc() {
 
     // Initialize state
     app->backlight_on = false;
+    app->backlight_timeout_sec = 0;  // 0 = always on when enabled
+    app->swap_arrow_keys = false;
     app->has_reading_position = false;
     app->bookmark_count = 0;
     app->settings_loaded = false;
@@ -97,6 +99,10 @@ void app_load_settings(App* app) {
                 // Parse settings
                 if(strncmp(line, "backlight=", 10) == 0) {
                     app->backlight_on = (line[10] == '1');
+                } else if(strncmp(line, "backlight_timeout=", 18) == 0) {
+                    app->backlight_timeout_sec = (uint32_t)strtoul(line + 18, NULL, 10);
+                } else if(strncmp(line, "swap_arrow_keys=", 16) == 0) {
+                    app->swap_arrow_keys = (line[16] == '1');
                 } else if(strncmp(line, "last_topic=", 11) == 0) {
                     strncpy(app->last_topic_path, line + 11, sizeof(app->last_topic_path) - 1);
                     app->last_topic_path[sizeof(app->last_topic_path) - 1] = '\0';
@@ -146,6 +152,14 @@ void app_save_settings(App* app) {
         
         // Save backlight setting
         snprintf(line, sizeof(line), "backlight=%d\n", app->backlight_on ? 1 : 0);
+        storage_file_write(file, line, strlen(line));
+        
+        // Save backlight timeout
+        snprintf(line, sizeof(line), "backlight_timeout=%u\n", app->backlight_timeout_sec);
+        storage_file_write(file, line, strlen(line));
+        
+        // Save swap arrow keys setting
+        snprintf(line, sizeof(line), "swap_arrow_keys=%d\n", app->swap_arrow_keys ? 1 : 0);
         storage_file_write(file, line, strlen(line));
         
         // Save last reading position
@@ -256,8 +270,12 @@ bool app_is_page_bookmarked(App* app) {
 void app_set_backlight(App* app, bool on) {
     app->backlight_on = on;
     if(on) {
+        // When backlight is enabled, enforce it on
+        // The timeout setting can be used in future enhancements
+        // For now, we keep it simple: ON = always on while in app
         notification_message(app->notifications, &sequence_display_backlight_enforce_on);
     } else {
+        // When backlight is disabled, restore automatic system control
         notification_message(app->notifications, &sequence_display_backlight_enforce_auto);
     }
 }
