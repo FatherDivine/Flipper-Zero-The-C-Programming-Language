@@ -30,9 +30,10 @@ The app starts with a main menu offering the following options:
 ### Reading Features
 
 #### Page Navigation
-- **Right button**: Go to next page
-- **Left button**: Go to previous page
+- **Right button** (or Down if swapped): Go to next page
+- **Left button** (or Up if swapped): Go to previous page
 - **Back button**: Return to previous menu
+- Navigation controls can be swapped in Options menu
 
 #### Page Display
 - 4 lines of content per page for optimal readability
@@ -49,20 +50,37 @@ The app starts with a main menu offering the following options:
 
 Settings are automatically saved to `app_data/c_book/settings.config` and include:
 
-- **Backlight Setting**: Toggle between "ON" (always on while reading) and "Auto" (normal timeout)
+- **Backlight Setting**: Toggle between "ON" (backlight enabled) and "OFF" (use system default)
+- **Backlight Timeout**: Choose timeout duration (Always On, 10s, 30s, 60s, 90s)
+- **Navigation Controls**: Choose between Left/Right (default) or Up/Down for page navigation
 - **Last Reading Position**: Automatically saved when exiting a topic or the app
 - **Bookmarks**: All bookmark positions and their associated topics
 
 ### Backlight Control
 
 - When **Backlight: ON** is selected in Options:
-  - Screen backlight stays on while reading
-  - Only active in reading scenes (not menus)
+  - Screen backlight stays on while in the app
   - Automatically returns to normal behavior when app exits
-
-- When **Backlight: Auto** is selected:
+  
+- When **Backlight: OFF** is selected:
   - Normal Flipper backlight timeout behavior
   - Screen will turn off after inactivity
+
+- **Timeout Setting**: Configures the desired timeout (setting is saved for future use)
+  - Currently the backlight stays on continuously when enabled (timeout functionality planned for future release)
+  - Available timeout options: Always On, 10s, 30s, 60s, 90s
+
+### Navigation Controls
+
+- **Nav: Left/Right** (default):
+  - Right button: Go to next page
+  - Left button: Go to previous page
+  - Up/Down buttons: Scroll within pages (e.g., Credits scene)
+
+- **Nav: Up/Down** (when swapped):
+  - Down button: Go to next page
+  - Up button: Go to previous page
+  - Left/Right buttons: Scroll within pages (e.g., Credits scene)
 
 ### Error Handling
 
@@ -86,6 +104,13 @@ Settings are automatically saved to `app_data/c_book/settings.config` and includ
 - **Display Height**: 4 content lines + 1 footer line
 
 ## Version History
+
+### v0.4 (In Development)
+- Fixed Credits scene scrolling (up/down keys now work for scrolling)
+- Added navigation control swap option (Left/Right vs Up/Down)
+- Added backlight timeout configuration (Always On, 10s, 30s, 60s, 90s)
+- Enhanced Options menu with three configurable settings
+- Improved backlight control documentation
 
 ### v0.3
 - Added main menu system (Read, Continue Reading, Table of Contents, etc.)

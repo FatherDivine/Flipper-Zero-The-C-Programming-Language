@@ -139,8 +139,27 @@ void options_scene_on_enter(void* context) {
     if(app->backlight_on) {
         submenu_add_item(app->submenu, "Backlight: ON", OptionsBacklight, options_callback, app);
     } else {
-        submenu_add_item(app->submenu, "Backlight: Auto", OptionsBacklight, options_callback, app);
+        submenu_add_item(app->submenu, "Backlight: OFF", OptionsBacklight, options_callback, app);
     }
+    
+    // Backlight timeout option (use static buffer to ensure string persists)
+    static char timeout_str[24];
+    if(app->backlight_timeout_sec == 0) {
+        snprintf(timeout_str, sizeof(timeout_str), "Timeout: Always On");
+    } else {
+        snprintf(timeout_str, sizeof(timeout_str), "Timeout: %lus", (unsigned long)app->backlight_timeout_sec);
+    }
+    submenu_add_item(app->submenu, timeout_str, OptionsBacklightTimeout, options_callback, app);
+    
+    // Swap arrow keys option
+    if(app->swap_arrow_keys) {
+        submenu_add_item(app->submenu, "Nav: Up/Down", OptionsSwapArrowKeys, options_callback, app);
+    } else {
+        submenu_add_item(app->submenu, "Nav: Left/Right", OptionsSwapArrowKeys, options_callback, app);
+    }
+
+    // Restore last selected option
+    submenu_set_selected_item(app->submenu, app->options_selected_index);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
 }
@@ -154,6 +173,35 @@ bool options_scene_on_event(void* context, SceneManagerEvent event) {
             // Toggle backlight
             app->backlight_on = !app->backlight_on;
             app_set_backlight(app, app->backlight_on);
+            app_save_settings(app);
+            // Refresh the scene to show updated state
+            options_scene_on_exit(app);
+            options_scene_on_enter(app);
+            consumed = true;
+        } else if(event.event == OptionsBacklightTimeout) {
+            // Cycle through timeout values
+            static const uint32_t timeouts[] = {0, 10, 30, 60, 90};
+            static const size_t timeout_count = sizeof(timeouts) / sizeof(timeouts[0]);
+            
+            // Find current timeout index
+            size_t current_idx = 0;
+            for(size_t i = 0; i < timeout_count; i++) {
+                if(timeouts[i] == app->backlight_timeout_sec) {
+                    current_idx = i;
+                    break;
+                }
+            }
+            
+            // Cycle to next timeout
+            app->backlight_timeout_sec = timeouts[(current_idx + 1) % timeout_count];
+            app_save_settings(app);
+            // Refresh the scene to show updated state
+            options_scene_on_exit(app);
+            options_scene_on_enter(app);
+            consumed = true;
+        } else if(event.event == OptionsSwapArrowKeys) {
+            // Toggle arrow key swap
+            app->swap_arrow_keys = !app->swap_arrow_keys;
             app_save_settings(app);
             // Refresh the scene to show updated state
             options_scene_on_exit(app);
@@ -231,6 +279,9 @@ void bookmarks_scene_on_enter(void* context) {
             submenu_add_item(app->submenu, filename, i, bookmarks_callback, app);
         }
     }
+
+    // Restore last selected bookmark
+    submenu_set_selected_item(app->submenu, app->bookmarks_selected_index);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, SubmenuView);
 }

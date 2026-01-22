@@ -34,6 +34,8 @@ typedef struct App {
     // Menu selection memory
     uint32_t main_menu_selected_index;
     uint32_t chapter_selected_index;
+    uint32_t bookmarks_selected_index;
+    uint32_t options_selected_index;
 
     // Paging state
     size_t file_offset;
@@ -63,6 +65,8 @@ typedef struct App {
 
     // Settings
     bool backlight_on;
+    uint32_t backlight_timeout_sec;  // Backlight timeout in seconds (0 = always on)
+    bool swap_arrow_keys;  // Swap left/right with up/down
     bool settings_loaded;
 
 } App;
