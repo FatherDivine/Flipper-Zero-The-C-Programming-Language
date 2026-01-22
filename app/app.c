@@ -155,7 +155,7 @@ void app_save_settings(App* app) {
         storage_file_write(file, line, strlen(line));
         
         // Save backlight timeout
-        snprintf(line, sizeof(line), "backlight_timeout=%u\n", app->backlight_timeout_sec);
+        snprintf(line, sizeof(line), "backlight_timeout=%lu\n", (unsigned long)app->backlight_timeout_sec);
         storage_file_write(file, line, strlen(line));
         
         // Save swap arrow keys setting
