@@ -143,7 +143,7 @@ void options_scene_on_enter(void* context) {
     }
     
     // Backlight timeout option
-    char timeout_str[32];
+    char timeout_str[20];
     if(app->backlight_timeout_sec == 0) {
         snprintf(timeout_str, sizeof(timeout_str), "Timeout: Always On");
     } else {
@@ -176,18 +176,21 @@ bool options_scene_on_event(void* context, SceneManagerEvent event) {
             options_scene_on_enter(app);
             consumed = true;
         } else if(event.event == OptionsBacklightTimeout) {
-            // Cycle through timeout values: 0 (always on), 10, 30, 60, 90 seconds
-            if(app->backlight_timeout_sec == 0) {
-                app->backlight_timeout_sec = 10;
-            } else if(app->backlight_timeout_sec == 10) {
-                app->backlight_timeout_sec = 30;
-            } else if(app->backlight_timeout_sec == 30) {
-                app->backlight_timeout_sec = 60;
-            } else if(app->backlight_timeout_sec == 60) {
-                app->backlight_timeout_sec = 90;
-            } else {
-                app->backlight_timeout_sec = 0; // Back to always on
+            // Cycle through timeout values
+            static const uint32_t timeouts[] = {0, 10, 30, 60, 90};
+            static const size_t timeout_count = sizeof(timeouts) / sizeof(timeouts[0]);
+            
+            // Find current timeout index
+            size_t current_idx = 0;
+            for(size_t i = 0; i < timeout_count; i++) {
+                if(timeouts[i] == app->backlight_timeout_sec) {
+                    current_idx = i;
+                    break;
+                }
             }
+            
+            // Cycle to next timeout
+            app->backlight_timeout_sec = timeouts[(current_idx + 1) % timeout_count];
             app_save_settings(app);
             // Refresh the scene to show updated state
             options_scene_on_exit(app);
