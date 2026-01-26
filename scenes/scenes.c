@@ -226,7 +226,7 @@ void credits_scene_on_enter(void* context) {
     const char* credits_text = (
         "The C Programming Language, "
         "Flipper Zero Edition.\n"
-        //"\n"
+        "\n"
         "Original Book by:\n"
         "Brian W. Kernighan\n"
         "Dennis M. Ritchie\n"
