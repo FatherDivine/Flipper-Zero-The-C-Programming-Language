@@ -223,10 +223,10 @@ void credits_scene_on_enter(void* context) {
     App* app = context;
     widget_reset(app->widget);
 
-    const char* credits_text = 
-        "The C Programming Language,\n"
+    const char* credits_text = (
+        "The C Programming Language, "
         "Flipper Zero Edition.\n"
-        "\n"
+        //"\n"
         "Original Book by:\n"
         "Brian W. Kernighan\n"
         "Dennis M. Ritchie\n"
@@ -241,7 +241,7 @@ void credits_scene_on_enter(void* context) {
         "chapters, & \n"
         "everything else.\n"
         "\n"
-        "Version 0.4"
+        "Version 0.4");
 
     widget_add_text_scroll_element(
         app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, credits_text);
