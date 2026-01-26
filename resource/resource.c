@@ -95,7 +95,8 @@ Topic chapter3[] = {
 // Topic chapter8[] = {
 // };
 
-Topic index[] = {
+// Capitalized to skip redeclaration of index via 'flipperzero-firmware-wPlugins/toolchain/x86_64-linux/arm-none-eabi/include/string.h:24'
+Topic Index[] = {
     {"Index", NULL, APP_ASSETS_PATH("index/0-index.txt")}, 
 };
 Topic license[] = {
@@ -121,7 +122,7 @@ Chapter chapters[] = {
     {"Appendix A", appendixa, sizeof(appendixa) / sizeof(Topic)},
     {"Appendix B", appendixb, sizeof(appendixb) / sizeof(Topic)},
     {"Appendix C", appendixc, sizeof(appendixc) / sizeof(Topic)},
-    {"Index", index, sizeof(index) / sizeof(Topic)},
+    {"Index", Index, sizeof(Index) / sizeof(Topic)},
     {"LICENSE", license, sizeof(license) / sizeof(Topic)},
 };
 
