@@ -239,7 +239,12 @@ void credits_scene_on_enter(void* context) {
         "Code completion, polish\n"
         "refactoring, features,\n"
         "chapters, & \n"
-        "everything else.\n"
+        "everything else in\n"
+        "honor of Dennis Ritchie\n"
+        "& Kernighan's contributions\n"
+        "to the computing world.\n"
+        "RIP Dennis Ritchie.\n"
+        "09-9-1941 to 10-12-2011.\n"
         "\n"
         "Version 0.4");
 

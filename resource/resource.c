@@ -80,20 +80,72 @@ Topic chapter3[] = {
     {"3.8 Goto and Labels", NULL, APP_ASSETS_PATH("chapter3/8-chapter3.8.txt")},
 };
 
-// Topic chapter4[] = {
-// };
+Topic chapter4[] = {
+    {"4.0 Functions and Program Structure", NULL, APP_ASSETS_PATH("chapter4/0-chapter4.txt")},
+    {"4.1 Basics of Functions", NULL, APP_ASSETS_PATH("chapter4/1-chapter4.1.txt")},
+    {"4.2 Functions Returning Non-integers", NULL, APP_ASSETS_PATH("chapter4/2-chapter4.2.txt")},
+    {"4.3 External Variables", NULL, APP_ASSETS_PATH("chapter4/3-chapter4.3.txt")},
+    {"4.4 Scope Rules", NULL, APP_ASSETS_PATH("chapter4/4-chapter4.4.txt")},
+    {"4.5 Header Files", NULL, APP_ASSETS_PATH("chapter4/5-chapter4.5.txt")},
+    {"4.6 Static Variables", NULL, APP_ASSETS_PATH("chapter4/6-chapter4.6.txt")},
+    {"4.7 Register Variables", NULL, APP_ASSETS_PATH("chapter4/7-chapter4.7.txt")},
+    {"4.8 Block STructure", NULL, APP_ASSETS_PATH("chapter4/8-chapter4.8.txt")},
+    {"4.9 Initialization", NULL, APP_ASSETS_PATH("chapter4/9-chapter4.9.txt")},
+    {"4.10 Recursion", NULL, APP_ASSETS_PATH("chapter4/10-chapter4.10.txt")},
+    {"4.11 The C Preprocessor", NULL, APP_ASSETS_PATH("chapter4/11-chapter4.11.txt")},
+};
 
-// Topic chapter5[] = {
-// };
+Topic chapter5[] = {
+    {"5.0 Pointers and Arrays", NULL, APP_ASSETS_PATH("chapter5/0-chapter5.txt")},
+    {"5.1 Points and Addresses", NULL, APP_ASSETS_PATH("chapter5/1-chapter5.1.txt")},
+    {"5.2 Pointers and Function Arguments", NULL, APP_ASSETS_PATH("chapter5/2-chapter5.2.txt")},
+    {"5.3 Points and Arrays", NULL, APP_ASSETS_PATH("chapter5/3-chapter5.3.txt")},
+    {"5.4 Address Arithmetic", NULL, APP_ASSETS_PATH("chapter5/4-chapter5.4.txt")},
+    {"5.5 Character Pointers and Functions", NULL, APP_ASSETS_PATH("chapter5/5-chapter5.5.txt")},
+    {"5.6 Pointer Arrays; Pointers to Pointers", NULL, APP_ASSETS_PATH("chapter5/6-chapter5.6.txt")},
+    {"5.7 Multi-dimensional Arrays", NULL, APP_ASSETS_PATH("chapter5/7-chapter5.7.txt")},
+    {"5.8 Initialization of Pointer Arrays", NULL, APP_ASSETS_PATH("chapter5/8-chapter5.8.txt")},
+    {"5.9 Pointers vs. Multi-dimensional Arrays", NULL, APP_ASSETS_PATH("chapter5/9-chapter5.9.txt")},
+    {"5.10 Command-line Arguments", NULL, APP_ASSETS_PATH("chapter5/10-chapter5.10.txt")},
+    {"5.11 Pointers to Functions", NULL, APP_ASSETS_PATH("chapter5/11-chapter5.11.txt")},
+    {"5.12 Complicated Declarations", NULL, APP_ASSETS_PATH("chapter5/12-chapter5.12.txt")},
+};
 
-// Topic chapter6[] = {
-// };
+Topic chapter6[] = {
+    {"6.0 Structures", NULL, APP_ASSETS_PATH("chapter6/0-chapter6.txt")},
+    {"6.1 Basics of Structures", NULL, APP_ASSETS_PATH("chapter6/1-chapter6.1.txt")},
+    {"6.2 Structures and Functions", NULL, APP_ASSETS_PATH("chapter6/2-chapter6.2.txt")},
+    {"6.3 Arrays of Structures", NULL, APP_ASSETS_PATH("chapter6/3-chapter6.3.txt")},
+    {"6.4 Pointers to Structures", NULL, APP_ASSETS_PATH("chapter6/4-chapter6.4.txt")},
+    {"6.5 Self-referential Structures", NULL, APP_ASSETS_PATH("chapter6/5-chapter6.5.txt")},
+    {"6.6 Table Lookup", NULL, APP_ASSETS_PATH("chapter6/6-chapter6.6.txt")},
+    {"6.7 Typedef", NULL, APP_ASSETS_PATH("chapter6/7-chapter6.7.txt")},
+    {"6.8 Unions", NULL, APP_ASSETS_PATH("chapter6/8-chapter6.8.txt")},
+    {"6.9 Bit-fields", NULL, APP_ASSETS_PATH("chapter6/9-chapter6.9.txt")},
+};
 
-// Topic chapter7[] = {
-// };
+Topic chapter7[] = {
+    {"7.0 Input and Output", NULL, APP_ASSETS_PATH("chapter7/0-chapter7.txt")},
+    {"7.1 Standard Input and Output", NULL, APP_ASSETS_PATH("chapter7/1-chapter7.1.txt")},
+    {"7.2 Formatted Output--Printf", NULL, APP_ASSETS_PATH("chapter7/2-chapter7.2.txt")},
+    {"7.3 Variable-length Argument Lists", NULL, APP_ASSETS_PATH("chapter7/3-chapter7.3.txt")},
+    {"7.4 Formatted Input--Scanf", NULL, APP_ASSETS_PATH("chapter7/4-chapter7.4.txt")},
+    {"7.5 File Access", NULL, APP_ASSETS_PATH("chapter7/5-chapter7.5.txt")},
+    {"7.6 Error Handling--Stderr and Exit", NULL, APP_ASSETS_PATH("chapter7/6-chapter7.6.txt")},
+    {"7.7 Line Input and Output", NULL, APP_ASSETS_PATH("chapter7/7-chapter7.7.txt")},
+    {"7.8 Miscellaneous Functions", NULL, APP_ASSETS_PATH("chapter7/8-chapter7.8.txt")},
+};
 
-// Topic chapter8[] = {
-// };
+Topic chapter8[] = {
+    {"8.0 The UNIX System Interface", NULL, APP_ASSETS_PATH("chapter8/0-chapter8.txt")},
+    {"8.1 File Descriptors", NULL, APP_ASSETS_PATH("chapter8/1-chapter8.1.txt")},
+    {"8.2 Low Level I/O--Read and Write", NULL, APP_ASSETS_PATH("chapter8/2-chapter8.2.txt")},
+    {"8.3 Open, Creat, Close, Unlink", NULL, APP_ASSETS_PATH("chapter8/3-chapter8.3.txt")},
+    {"8.4 Random Access--Lseek", NULL, APP_ASSETS_PATH("chapter8/4-chapter8.4.txt")},
+    {"8.5 Example--An Implementation of Fopen and Getc", NULL, APP_ASSETS_PATH("chapter8/5-chapter8.5.txt")},
+    {"8.6 Example--Listing Directories", NULL, APP_ASSETS_PATH("chapter8/6-chapter8.6.txt")},
+    {"8.7 Example--A Storage Allocator", NULL, APP_ASSETS_PATH("chapter8/7-chapter8.7.txt")},
+};
 
 // Capitalized to skip redeclaration of index via 'flipperzero-firmware-wPlugins/toolchain/x86_64-linux/arm-none-eabi/include/string.h:24'
 Topic Index[] = {
