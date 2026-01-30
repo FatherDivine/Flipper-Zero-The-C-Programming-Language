@@ -246,7 +246,11 @@ void credits_scene_on_enter(void* context) {
         "RIP Dennis Ritchie.\n"
         "09-9-1941 to 10-12-2011.\n"
         "\n"
+<<<<<<< HEAD
         "Version 0.4");
+=======
+        "Version 0.4";
+>>>>>>> 0fd0d33 (one semicolon keeps the doctor away)
 
     widget_add_text_scroll_element(
         app->widget, 0, 0, WIDGET_WIDTH, WIDGET_HEIGHT, credits_text);
