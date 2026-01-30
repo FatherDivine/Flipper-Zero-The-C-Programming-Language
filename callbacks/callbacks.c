@@ -125,6 +125,19 @@ bool widget_input_callback(InputEvent* event, void* context) {
     static uint32_t ok_press_start = 0;
 
     if(event->type == InputTypeShort || event->type == InputTypeRepeat) {
+        // Get current scene to determine input handling
+        uint32_t current_scene = scene_manager_get_current_scene(app->scene_manager);
+        
+        // Credits scene: all arrow keys should scroll, not page
+        if(current_scene == CreditsScene) {
+            // Let all arrow keys pass through to widget for scrolling
+            if(event->key == InputKeyUp || event->key == InputKeyDown ||
+               event->key == InputKeyLeft || event->key == InputKeyRight) {
+                return false;  // Let widget handle scrolling
+            }
+        }
+        
+        // Topic scene and others: use configured navigation keys for paging
         // Determine which keys to use for paging based on swap_arrow_keys setting
         InputKey next_key = app->swap_arrow_keys ? InputKeyDown : InputKeyRight;
         InputKey prev_key = app->swap_arrow_keys ? InputKeyUp : InputKeyLeft;
